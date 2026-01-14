@@ -141,6 +141,8 @@
     <script>
         let currentModel = null;
         let currentRelationship = null;
+        let availableDimensions = [];
+        let availableMetrics = [];
         let reportConfig = {
             model: null,
             row_dimensions: [],
@@ -166,6 +168,7 @@
                 });
             } catch (error) {
                 console.error('Error loading models:', error);
+                alert('Failed to load models. Please refresh the page.');
             }
         }
 
@@ -182,12 +185,19 @@
             updateDimensionsDisplay();
             updateMetricsDisplay();
 
+            // Clear preview
+            document.getElementById('previewContainer').innerHTML = '<p style="color: #999;">Configure your report and click "Preview" to see the data</p>';
+
             if (!currentModel) {
                 document.getElementById('dimensionsList').innerHTML = '<small style="color: #999;">Select a model first</small>';
                 document.getElementById('metricsList').innerHTML = '<small style="color: #999;">Select a model first</small>';
                 document.getElementById('relationshipsContainer').style.display = 'none';
                 return;
             }
+
+            // Show loading state
+            document.getElementById('dimensionsList').innerHTML = '<small style="color: #999;">⏳ Loading...</small>';
+            document.getElementById('metricsList').innerHTML = '<small style="color: #999;">⏳ Loading...</small>';
 
             try {
                 // Load dimensions and metrics
@@ -196,18 +206,25 @@
                     window.apiClient.get(`/api/visual-reports/models/${currentModel}/metrics`)
                 ]);
 
-                displayDimensions(dimensions);
-                displayMetrics(metrics);
+                availableDimensions = dimensions || [];
+                availableMetrics = metrics || [];
+
+                displayDimensions(availableDimensions);
+                displayMetrics(availableMetrics);
 
                 // Load relationships
                 try {
                     const relationshipsResponse = await window.apiClient.get(`/api/visual-reports/models/${currentModel}/relationships`);
-                    loadRelationships(relationshipsResponse.relationships || []);
+                    loadRelationships(relationshipsResponse.relationships || relationshipsResponse || []);
                 } catch (err) {
                     console.log('No relationships found for this model');
+                    document.getElementById('relationshipsContainer').style.display = 'none';
                 }
             } catch (error) {
                 console.error('Error loading metadata:', error);
+                alert('Failed to load dimensions and metrics for this model');
+                document.getElementById('dimensionsList').innerHTML = '<small style="color: red;">Error loading dimensions</small>';
+                document.getElementById('metricsList').innerHTML = '<small style="color: red;">Error loading metrics</small>';
             }
         });
 
@@ -273,9 +290,52 @@
 
             relationships.forEach(rel => {
                 const option = document.createElement('option');
-                option.value = rel.name;
+                option.value = JSON.stringify(rel);
                 option.textContent = `${rel.label} (${rel.type})`;
+                option.dataset.relatedModel = rel.related_model;
                 select.appendChild(option);
+            });
+
+            // Handle relationship selection
+            select.addEventListener('change', async (e) => {
+                if (!e.target.value) {
+                    currentRelationship = null;
+                    return;
+                }
+
+                try {
+                    const rel = JSON.parse(e.target.value);
+                    currentRelationship = rel;
+
+                    // Load related model's dimensions and metrics
+                    document.getElementById('dimensionsList').innerHTML = '<small style="color: #999;">⏳ Loading related fields...</small>';
+                    document.getElementById('metricsList').innerHTML = '<small style="color: #999;">⏳ Loading related fields...</small>';
+
+                    const [dimensions, metrics] = await Promise.all([
+                        window.apiClient.get(`/api/visual-reports/models/${rel.related_model}/dimensions`),
+                        window.apiClient.get(`/api/visual-reports/models/${rel.related_model}/metrics`)
+                    ]);
+
+                    // Add relationship prefix to related model's fields
+                    const prefixedDimensions = (dimensions || []).map(d => ({
+                        ...d,
+                        column: `${rel.name}.${d.column}`,
+                        label: `${rel.label} → ${d.label || d.column}`
+                    }));
+
+                    const prefixedMetrics = (metrics || []).map(m => ({
+                        ...m,
+                        column: `${rel.name}.${m.column}`,
+                        label: `${rel.label} → ${m.label || m.column}`
+                    }));
+
+                    // Merge with base model's fields
+                    displayDimensions([...availableDimensions, ...prefixedDimensions]);
+                    displayMetrics([...availableMetrics, ...prefixedMetrics]);
+                } catch (error) {
+                    console.error('Error loading related model fields:', error);
+                    alert('Failed to load related model fields');
+                }
             });
         }
 
@@ -320,23 +380,38 @@
 
                 if (type === 'dimension' && dragType === 'dimension') {
                     if (elementId === 'rowDimensions') {
-                        if (!reportConfig.row_dimensions.includes(column)) {
+                        // Check for duplicates
+                        const isDuplicate = reportConfig.row_dimensions.some(d => d.column === column);
+                        if (!isDuplicate) {
                             reportConfig.row_dimensions.push({column, label});
+                            updateDimensionsDisplay();
+                        } else {
+                            alert(`"${label}" is already in Row Dimensions`);
                         }
                     } else if (elementId === 'columnDimensions') {
-                        if (!reportConfig.column_dimensions.includes(column)) {
+                        // Check for duplicates
+                        const isDuplicate = reportConfig.column_dimensions.some(d => d.column === column);
+                        if (!isDuplicate) {
                             reportConfig.column_dimensions.push({column, label});
+                            updateDimensionsDisplay();
+                        } else {
+                            alert(`"${label}" is already in Column Dimensions`);
                         }
                     }
-                    updateDimensionsDisplay();
                 } else if (type === 'metric' && dragType === 'metric') {
-                    reportConfig.metrics.push({
-                        column: column,
-                        label: label,
-                        aggregate: aggregate,
-                        alias: `${column}_${aggregate}`
-                    });
-                    updateMetricsDisplay();
+                    // Check if metric with same column and aggregate already exists
+                    const isDuplicate = reportConfig.metrics.some(m => m.column === column && m.aggregate === aggregate);
+                    if (isDuplicate) {
+                        alert(`"${label} (${aggregate})" is already added`);
+                    } else {
+                        reportConfig.metrics.push({
+                            column: column,
+                            label: label,
+                            aggregate: aggregate,
+                            alias: `${column}_${aggregate}`
+                        });
+                        updateMetricsDisplay();
+                    }
                 }
             });
         }
@@ -425,25 +500,39 @@
                 return;
             }
 
+            if (reportConfig.metrics.length === 0) {
+                alert('Please add at least one metric to preview');
+                return;
+            }
+
             try {
-                document.getElementById('previewContainer').innerHTML = '<p style="text-align: center; color: #999;">⏳ Loading preview...</p>';
+                const container = document.getElementById('previewContainer');
+                container.innerHTML = '<p style="text-align: center; color: #999;">⏳ Loading preview...</p>';
 
                 const response = await window.apiClient.post('/api/visual-reports/preview', {
                     model: reportConfig.model,
-                    row_dimensions: reportConfig.row_dimensions.map(d => typeof d === 'string' ? d : d.column),
-                    column_dimensions: reportConfig.column_dimensions.map(d => typeof d === 'string' ? d : d.column),
+                    row_dimensions: reportConfig.row_dimensions.map(d => d.column),
+                    column_dimensions: reportConfig.column_dimensions.map(d => d.column),
                     metrics: reportConfig.metrics
                 });
 
-                const container = document.getElementById('previewContainer');
                 if (response.success) {
-                    container.innerHTML = '<pre>' + JSON.stringify(response.data, null, 2) + '</pre>';
+                    const data = response.data || [];
+                    if (Array.isArray(data) && data.length > 0) {
+                        const summary = `<p style="color: #28a745; margin-bottom: 1rem; font-weight: bold;">✅ Preview loaded (${data.length} rows)</p>`;
+                        container.innerHTML = summary + '<pre>' + JSON.stringify(data.slice(0, 10), null, 2) + '</pre>';
+                        if (data.length > 10) {
+                            container.innerHTML += '<p style="color: #999; margin-top: 1rem;"><em>Showing first 10 rows of ' + data.length + ' total</em></p>';
+                        }
+                    } else {
+                        container.innerHTML = '<p style="color: #ff9800;">⚠️ No data found for this configuration</p>';
+                    }
                 } else {
-                    container.innerHTML = `<p style="color: red;">Error: ${response.message}</p>`;
+                    container.innerHTML = `<p style="color: red;">❌ Error: ${response.message || 'Unknown error'}</p>`;
                 }
             } catch (error) {
                 console.error('Error previewing:', error);
-                document.getElementById('previewContainer').innerHTML = '<p style="color: red;">Error previewing report: ' + error.message + '</p>';
+                document.getElementById('previewContainer').innerHTML = '<p style="color: red;">❌ Error previewing report:<br>' + (error.message || 'Unknown error') + '</p>';
             }
         }
 
@@ -475,15 +564,39 @@
             const category = document.getElementById('templateCategory').value;
             const icon = document.getElementById('templateIcon').value.trim() || '📊';
 
+            // Validation
             if (!name) {
-                alert('Please enter a template name');
+                alert('❌ Please enter a template name');
+                document.getElementById('templateName').focus();
+                return;
+            }
+
+            if (name.length < 3) {
+                alert('❌ Template name must be at least 3 characters');
+                document.getElementById('templateName').focus();
                 return;
             }
 
             if (!category) {
-                alert('Please select a category');
+                alert('❌ Please select a category');
+                document.getElementById('templateCategory').focus();
                 return;
             }
+
+            if (!reportConfig.model) {
+                alert('❌ No data source selected');
+                return;
+            }
+
+            if (reportConfig.metrics.length === 0) {
+                alert('❌ Please add at least one metric');
+                return;
+            }
+
+            // Disable button to prevent double-submit
+            const saveBtn = event.target;
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ Saving...';
 
             try {
                 const response = await window.apiClient.post('/api/visual-reports/builder/save-template', {
@@ -492,24 +605,29 @@
                     category: category,
                     icon: icon,
                     model: reportConfig.model,
-                    row_dimensions: reportConfig.row_dimensions.map(d => typeof d === 'string' ? d : d.column),
-                    column_dimensions: reportConfig.column_dimensions.map(d => typeof d === 'string' ? d : d.column),
+                    row_dimensions: reportConfig.row_dimensions.map(d => d.column),
+                    column_dimensions: reportConfig.column_dimensions.map(d => d.column),
                     metrics: reportConfig.metrics,
                     filters: [],
                     default_view: { type: 'table' }
                 });
 
                 if (response.success) {
-                    alert('✅ Template created successfully! Redirecting to dashboard...');
+                    closeSaveModal();
+                    alert('✅ Template "' + name + '" created successfully!\n\nRedirecting to dashboard...');
                     setTimeout(() => {
                         window.location.href = '/visual-reports';
-                    }, 1000);
+                    }, 1500);
                 } else {
-                    alert('❌ Error: ' + response.message);
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '💾 Save Template';
+                    alert('❌ Error: ' + (response.message || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error saving template:', error);
-                alert('Error saving template: ' + error.message);
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 Save Template';
+                alert('❌ Error saving template:\n' + (error.message || 'Unknown error'));
             }
         }
 
@@ -519,5 +637,30 @@
                 closeSaveModal();
             }
         });
+
+        // Handle Escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('saveModal').style.display === 'flex') {
+                closeSaveModal();
+            }
+        });
+
+        // Clear form when opening modal
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'style') {
+                    const modal = document.getElementById('saveModal');
+                    if (modal.style.display === 'flex') {
+                        // Clear previous values
+                        document.getElementById('templateName').value = '';
+                        document.getElementById('templateDesc').value = '';
+                        document.getElementById('templateCategory').value = '';
+                        document.getElementById('templateIcon').value = '';
+                    }
+                }
+            });
+        });
+
+        observer.observe(document.getElementById('saveModal'), { attributes: true });
     </script>
 @endsection
