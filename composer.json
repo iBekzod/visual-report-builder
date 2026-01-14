@@ -1,0 +1,73 @@
+{
+    "name": "ibekzod/visual-report-builder",
+    "description": "Visual Report Builder for Laravel - Build multi-dimensional pivot tables and reports without code. Like Kyubit.com",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bekzod",
+            "email": "ibekzod@example.com",
+            "homepage": "https://github.com/ibekzod"
+        }
+    ],
+    "homepage": "https://github.com/ibekzod/visual-report-builder",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ibekzod/visual-report-builder.git"
+    },
+    "keywords": [
+        "laravel",
+        "report",
+        "builder",
+        "pivot",
+        "analytics",
+        "dashboard",
+        "visualization",
+        "multi-dimensional",
+        "kyubit",
+        "reporting"
+    ],
+    "require": {
+        "php": "^8.1",
+        "laravel/framework": "^10.0|^11.0",
+        "illuminate/support": "^10.0|^11.0",
+        "maatwebsite/excel": "^3.1",
+        "barryvdh/laravel-dompdf": "^2.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.0",
+        "mockery/mockery": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ibekzod\\VisualReportBuilder\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ibekzod\\VisualReportBuilder\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ibekzod\\VisualReportBuilder\\VisualReportBuilderServiceProvider"
+            ],
+            "aliases": {
+                "VisualReportBuilder": "Ibekzod\\VisualReportBuilder\\Facades\\VisualReportBuilder"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage",
+        "lint": "pint"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

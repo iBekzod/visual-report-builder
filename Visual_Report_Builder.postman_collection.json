@@ -1,0 +1,523 @@
+{
+  "info": {
+    "_postman_id": "visual-report-builder",
+    "name": "Visual Report Builder API",
+    "description": "Complete API collection for Visual Report Builder Laravel package\n\n## Getting Started\n\n1. Import this collection into Postman\n2. Set the following environment variables:\n   - `base_url`: http://yourapp.test (or your app URL)\n   - `api_token`: Your Bearer token (from /api/user or Laravel Sanctum)\n   - `report_id`: A report ID (use after creating a report)\n   - `user_id`: A user ID (for sharing)\n   - `model_name`: App\\Models\\Order (or your model)\n\n## Authentication\n\nAll API endpoints require authentication. Get a token:\n\n```\nPOST /api/login\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}\n```\n\nOr use Laravel Sanctum tokens if already set up.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "item": [
+      {
+        "name": "📊 Reports",
+        "description": "CRUD operations for reports",
+        "item": [
+          {
+            "name": "List All Reports",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports"]
+              },
+              "description": "Get a paginated list of all reports accessible to the current user (owned or shared)"
+            },
+            "response": []
+          },
+          {
+            "name": "Create Report",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Monthly Sales Report\",\n  \"description\": \"Sales by region and product category\",\n  \"model\": \"App\\\\Models\\\\Order\",\n  \"configuration\": {\n    \"row_dimensions\": [\"region\", \"status\"],\n    \"column_dimensions\": [\"month\"],\n    \"metrics\": [\n      {\n        \"column\": \"amount\",\n        \"aggregate\": \"sum\",\n        \"label\": \"Total Sales\",\n        \"alias\": \"total_sales\"\n      },\n      {\n        \"column\": \"id\",\n        \"aggregate\": \"count\",\n        \"label\": \"Orders\",\n        \"alias\": \"order_count\"\n      },\n      {\n        \"column\": \"amount\",\n        \"aggregate\": \"avg\",\n        \"label\": \"Average Order\",\n        \"alias\": \"avg_order\"\n      }\n    ],\n    \"filters\": {\n      \"status\": [\"completed\", \"paid\"]\n    }\n  },\n  \"view_options\": {\n    \"theme\": \"light\",\n    \"show_totals\": true\n  }\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports"]
+              },
+              "description": "Create a new report with specified configuration"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Single Report",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}"]
+              },
+              "description": "Retrieve details of a specific report"
+            },
+            "response": []
+          },
+          {
+            "name": "Update Report",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Updated Sales Report\",\n  \"description\": \"Updated description\",\n  \"configuration\": {\n    \"row_dimensions\": [\"region\"],\n    \"column_dimensions\": [],\n    \"metrics\": [\n      {\n        \"column\": \"amount\",\n        \"aggregate\": \"sum\",\n        \"label\": \"Total\"\n      }\n    ]\n  }\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}"]
+              },
+              "description": "Update an existing report (must own it or have edit permission)"
+            },
+            "response": []
+          },
+          {
+            "name": "Delete Report",
+            "request": {
+              "method": "DELETE",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}"]
+              },
+              "description": "Delete a report (must own it)"
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "▶️ Report Execution",
+        "description": "Execute and manage report generation",
+        "item": [
+          {
+            "name": "Execute Report",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}/execute",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}", "execute"]
+              },
+              "description": "Execute a saved report and get the results with pivot table data"
+            },
+            "response": []
+          },
+          {
+            "name": "Preview Configuration",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"model\": \"App\\\\Models\\\\Order\",\n  \"row_dimensions\": [\"region\"],\n  \"column_dimensions\": [\"month\"],\n  \"metrics\": [\n    {\n      \"column\": \"amount\",\n      \"aggregate\": \"sum\",\n      \"label\": \"Total Sales\"\n    },\n    {\n      \"column\": \"id\",\n      \"aggregate\": \"count\",\n      \"label\": \"Count\"\n    }\n  ],\n  \"filters\": {\n    \"status\": [\"completed\"]\n  }\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/preview",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "preview"]
+              },
+              "description": "Preview a report configuration without saving it. Useful for testing before saving"
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "📤 Exports",
+        "description": "Export reports in different formats",
+        "item": [
+          {
+            "name": "Export as CSV",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}/export/csv",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}", "export", "csv"]
+              },
+              "description": "Export report as CSV file. Use browser download or set output file in Postman"
+            },
+            "response": []
+          },
+          {
+            "name": "Export as Excel",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}/export/excel",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}", "export", "excel"]
+              },
+              "description": "Export report as Excel (XLSX) file with formatting"
+            },
+            "response": []
+          },
+          {
+            "name": "Export as PDF",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}/export/pdf",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}", "export", "pdf"]
+              },
+              "description": "Export report as PDF file (professional format)"
+            },
+            "response": []
+          },
+          {
+            "name": "Export as JSON",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}/export/json",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}", "export", "json"]
+              },
+              "description": "Export report as JSON. Useful for API integration and data processing"
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "🤝 Sharing",
+        "description": "Share reports with other users",
+        "item": [
+          {
+            "name": "Share Report with User",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"can_edit\": false,\n  \"can_share\": false\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}/share",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}", "share"]
+              },
+              "description": "Share a report with another user\n\n- `can_edit`: Allow user to edit the report\n- `can_share`: Allow user to share with others"
+            },
+            "response": []
+          },
+          {
+            "name": "Stop Sharing Report",
+            "request": {
+              "method": "DELETE",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"user_id\": \"{{user_id}}\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/reports/{{report_id}}/unshare",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "reports", "{{report_id}}", "unshare"]
+              },
+              "description": "Stop sharing a report with a user"
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "🔧 Builder Resources",
+        "description": "Get metadata for building reports",
+        "item": [
+          {
+            "name": "List Available Models",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/models",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "models"]
+              },
+              "description": "Get list of all available Eloquent models that can be used as data sources"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Model Metadata",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/models/{{model_name}}/metadata",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "models", "{{model_name}}", "metadata"]
+              },
+              "description": "Get both dimensions and metrics for a specific model in one call"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Model Dimensions",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/models/{{model_name}}/dimensions",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "models", "{{model_name}}", "dimensions"]
+              },
+              "description": "Get available dimensions for a model (columns suitable for grouping)"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Model Metrics",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{api_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/visual-reports/models/{{model_name}}/metrics",
+                "host": ["{{base_url}}"],
+                "path": ["api", "visual-reports", "models", "{{model_name}}", "metrics"]
+              },
+              "description": "Get available metrics for a model (numeric columns suitable for aggregation)"
+            },
+            "response": []
+          }
+        ]
+      }
+    ],
+    "variable": [
+      {
+        "key": "base_url",
+        "value": "http://yourapp.test",
+        "type": "string"
+      },
+      {
+        "key": "api_token",
+        "value": "",
+        "type": "string"
+      },
+      {
+        "key": "report_id",
+        "value": "1",
+        "type": "string"
+      },
+      {
+        "key": "user_id",
+        "value": "2",
+        "type": "string"
+      },
+      {
+        "key": "model_name",
+        "value": "App\\Models\\Order",
+        "type": "string"
+      }
+    ]
+  }
+}
