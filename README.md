@@ -187,6 +187,18 @@ curl -X GET http://yourapp.test/api/visual-reports/models/App%5CModels%5COrder/m
 | GET | `/api/visual-reports/models/{model}/relationships` | Get relationships (for JOINs) |
 | POST | `/api/visual-reports/preview` | Preview configuration |
 
+### Testing with Postman
+
+A complete Postman collection is included: **Visual_Report_Builder.postman_collection.json**
+
+Import it into Postman:
+1. Open Postman
+2. Click "Import" → "Upload Files"
+3. Select `Visual_Report_Builder.postman_collection.json`
+4. Set your base URL: `http://yourapp.test`
+5. Add Bearer token in Authorization tab
+6. Test all endpoints with pre-configured requests
+
 ## ⚙️ Configuration
 
 The package works out-of-the-box, but you can customize via config:
