@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('visual_report_shares', function (Blueprint $table) {
+        Schema::create('visual_reports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('report_id')->constrained('visual_reports')->cascadeOnDelete();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->string('model'); // Eloquent model class
+            $table->json('configuration'); // Report config
+            $table->json('view_options')->nullable();
             $table->foreignId('user_id')->constrained();
-            $table->boolean('can_edit')->default(false);
-            $table->boolean('can_share')->default(false);
             $table->timestamps();
+            $table->softDeletes();
 
-            $table->unique(['report_id', 'user_id']);
             $table->index('user_id');
-            $table->index('can_edit');
+            $table->index('created_at');
         });
     }
 
@@ -30,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('visual_report_shares');
+        Schema::dropIfExists('visual_reports');
     }
 };

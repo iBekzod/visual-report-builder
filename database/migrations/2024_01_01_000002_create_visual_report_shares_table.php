@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('visual_saved_reports', function (Blueprint $table) {
+        Schema::create('visual_report_shares', function (Blueprint $table) {
             $table->id();
             $table->foreignId('report_id')->constrained('visual_reports')->cascadeOnDelete();
-            $table->json('data'); // Cached results
-            $table->timestamp('cached_at')->nullable();
-            $table->integer('cache_duration')->default(3600); // In seconds
+            $table->foreignId('user_id')->constrained();
+            $table->boolean('can_edit')->default(false);
+            $table->boolean('can_share')->default(false);
             $table->timestamps();
 
-            $table->index('report_id');
-            $table->index('cached_at');
+            $table->unique(['report_id', 'user_id']);
+            $table->index('user_id');
         });
     }
 
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('visual_saved_reports');
+        Schema::dropIfExists('visual_report_shares');
     }
 };
