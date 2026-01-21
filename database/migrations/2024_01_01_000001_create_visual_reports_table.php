@@ -11,20 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('visual_reports', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('model'); // Eloquent model class
-            $table->json('configuration'); // Report config
-            $table->json('view_options')->nullable();
-            $table->foreignId('user_id')->constrained();
-            $table->timestamps();
-            $table->softDeletes();
+        if (!Schema::hasTable('visual_reports')) {
+            Schema::create('visual_reports', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->text('description')->nullable();
+                $table->string('model'); // Eloquent model class
+                $table->json('configuration'); // Report config
+                $table->json('view_options')->nullable();
+                $table->foreignId('user_id')->constrained();
+                $table->timestamps();
+                $table->softDeletes();
 
-            $table->index('user_id');
-            $table->index('created_at');
-        });
+                $table->index('user_id');
+                $table->index('created_at');
+            });
+        }
     }
 
     /**

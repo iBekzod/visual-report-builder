@@ -11,28 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('template_filters', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('report_template_id')->constrained('report_templates')->cascadeOnDelete();
+        if (!Schema::hasTable('template_filters')) {
+            Schema::create('template_filters', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('report_template_id')->constrained('report_templates')->cascadeOnDelete();
 
-            // Filter Definition
-            $table->string('column');
-            $table->string('label');
-            $table->string('type'); // text, select, date, daterange, number, etc.
-            $table->json('options')->nullable(); // For select/multi-select: [{"value":"","label":""}]
-            $table->string('operator')->default('='); // =, !=, >, <, >=, <=, in, like, between
-            $table->boolean('is_required')->default(false);
-            $table->boolean('is_active')->default(true);
-            $table->integer('sort_order')->default(0);
+                // Filter Definition
+                $table->string('column');
+                $table->string('label');
+                $table->string('type'); // text, select, date, daterange, number, etc.
+                $table->json('options')->nullable(); // For select/multi-select: [{"value":"","label":""}]
+                $table->string('operator')->default('='); // =, !=, >, <, >=, <=, in, like, between
+                $table->boolean('is_required')->default(false);
+                $table->boolean('is_active')->default(true);
+                $table->integer('sort_order')->default(0);
 
-            // Default Value
-            $table->string('default_value')->nullable();
+                // Default Value
+                $table->string('default_value')->nullable();
 
-            $table->timestamps();
+                $table->timestamps();
 
-            $table->index('report_template_id');
-            $table->index('is_active');
-        });
+                $table->index('report_template_id');
+                $table->index('is_active');
+            });
+        }
     }
 
     /**

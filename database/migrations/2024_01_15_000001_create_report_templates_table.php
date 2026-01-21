@@ -11,35 +11,37 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('report_templates', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('model'); // Eloquent model class
+        if (!Schema::hasTable('report_templates')) {
+            Schema::create('report_templates', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->text('description')->nullable();
+                $table->string('model'); // Eloquent model class
 
-            // Template Configuration
-            $table->json('dimensions'); // Available dimensions
-            $table->json('metrics'); // Available metrics
-            $table->json('filters'); // Filter definitions
-            $table->json('default_view'); // Default visualization type (table, line, bar, pie)
-            $table->json('chart_config'); // Chart.js / ApexCharts config
+                // Template Configuration
+                $table->json('dimensions'); // Available dimensions
+                $table->json('metrics'); // Available metrics
+                $table->json('filters'); // Filter definitions
+                $table->json('default_view'); // Default visualization type (table, line, bar, pie)
+                $table->json('chart_config'); // Chart.js / ApexCharts config
 
-            // Display Settings
-            $table->string('icon')->nullable();
-            $table->string('category')->nullable();
-            $table->integer('sort_order')->default(0);
+                // Display Settings
+                $table->string('icon')->nullable();
+                $table->string('category')->nullable();
+                $table->integer('sort_order')->default(0);
 
-            // Visibility & Access
-            $table->boolean('is_active')->default(true);
-            $table->boolean('is_public')->default(false);
+                // Visibility & Access
+                $table->boolean('is_active')->default(true);
+                $table->boolean('is_public')->default(false);
 
-            $table->foreignId('created_by')->constrained('users');
-            $table->timestamps();
-            $table->softDeletes();
+                $table->foreignId('created_by')->constrained('users');
+                $table->timestamps();
+                $table->softDeletes();
 
-            $table->index('category');
-            $table->index('is_active');
-        });
+                $table->index('category');
+                $table->index('is_active');
+            });
+        }
     }
 
     /**

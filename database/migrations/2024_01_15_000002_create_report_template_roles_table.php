@@ -11,22 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('report_template_roles', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('report_template_id')->constrained('report_templates')->cascadeOnDelete();
-            $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
+        if (!Schema::hasTable('report_template_roles')) {
+            Schema::create('report_template_roles', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('report_template_id')->constrained('report_templates')->cascadeOnDelete();
+                $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
 
-            // Permissions
-            $table->boolean('can_view')->default(true);
-            $table->boolean('can_export')->default(true);
-            $table->boolean('can_save')->default(false);
-            $table->boolean('can_edit_filters')->default(true);
+                // Permissions
+                $table->boolean('can_view')->default(true);
+                $table->boolean('can_export')->default(true);
+                $table->boolean('can_save')->default(false);
+                $table->boolean('can_edit_filters')->default(true);
 
-            $table->timestamps();
+                $table->timestamps();
 
-            $table->unique(['report_template_id', 'role_id']);
-            $table->index('role_id');
-        });
+                $table->unique(['report_template_id', 'role_id']);
+                $table->index('role_id');
+            });
+        }
     }
 
     /**
