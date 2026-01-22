@@ -47,10 +47,10 @@ class ReportController extends Controller
             'configuration' => 'required|array',
         ]);
 
-        $report = Report::create([
-            ...$validated,
-            'user_id' => auth()->id(),
-        ]);
+        $report = Report::create(array_merge(
+            $validated,
+            ['user_id' => auth()->id()]
+        ));
 
         return new ReportResource($report);
     }

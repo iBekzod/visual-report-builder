@@ -3,8 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use Ibekzod\VisualReportBuilder\Http\Controllers\TemplateController;
 use Ibekzod\VisualReportBuilder\Http\Controllers\BuilderController;
+use Ibekzod\VisualReportBuilder\Http\Controllers\DashboardController;
 
 Route::middleware(['api', 'auth:sanctum'])->prefix('api/visual-reports')->name('visual-reports.')->group(function () {
+    // Dashboard
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
     // Template endpoints (Template-Based Execution)
     Route::get('templates', [TemplateController::class, 'index'])->name('templates.index');
     Route::get('templates/{template}', [TemplateController::class, 'show'])->name('templates.show');

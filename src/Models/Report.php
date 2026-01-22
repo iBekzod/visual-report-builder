@@ -89,19 +89,35 @@ class Report extends Model
         if (isset($this->configuration['filters']) && is_array($this->configuration['filters'])) {
             foreach ($this->configuration['filters'] as $filter) {
                 if (isset($filter['column']) && isset($filter['operator']) && isset($filter['value'])) {
-                    match ($filter['operator']) {
-                        '=' => $query->where($filter['column'], $filter['value']),
-                        '!=' => $query->where($filter['column'], '!=', $filter['value']),
-                        '>' => $query->where($filter['column'], '>', $filter['value']),
-                        '<' => $query->where($filter['column'], '<', $filter['value']),
-                        '>=' => $query->where($filter['column'], '>=', $filter['value']),
-                        '<=' => $query->where($filter['column'], '<=', $filter['value']),
-                        'like' => $query->where($filter['column'], 'like', "%{$filter['value']}%"),
-                        'in' => $query->whereIn($filter['column'], (array)$filter['value']),
-                        'between' => $query->whereBetween($filter['column'],
-                            (array)$filter['value']),
-                        default => null,
-                    };
+                    switch ($filter['operator']) {
+                        case '=':
+                            $query->where($filter['column'], $filter['value']);
+                            break;
+                        case '!=':
+                            $query->where($filter['column'], '!=', $filter['value']);
+                            break;
+                        case '>':
+                            $query->where($filter['column'], '>', $filter['value']);
+                            break;
+                        case '<':
+                            $query->where($filter['column'], '<', $filter['value']);
+                            break;
+                        case '>=':
+                            $query->where($filter['column'], '>=', $filter['value']);
+                            break;
+                        case '<=':
+                            $query->where($filter['column'], '<=', $filter['value']);
+                            break;
+                        case 'like':
+                            $query->where($filter['column'], 'like', "%{$filter['value']}%");
+                            break;
+                        case 'in':
+                            $query->whereIn($filter['column'], (array)$filter['value']);
+                            break;
+                        case 'between':
+                            $query->whereBetween($filter['column'], (array)$filter['value']);
+                            break;
+                    }
                 }
             }
         }

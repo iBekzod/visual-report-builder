@@ -25,9 +25,15 @@ class TemplateController extends Controller
     {
         $user = auth()->user();
         $templates = ReportTemplate::active()
-            ->with('results' => fn($q) => $q->where('user_id', $user->id))
+            ->where(function ($q) use ($user) {
+                $q->where('is_public', true)
+                    ->orWhere('created_by', $user->id);
+            })
+            ->with(['results' => function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            }])
             ->get()
-            ->map(function ($template) {
+            ->map(function ($template) use ($user) {
                 return [
                     'id' => $template->id,
                     'name' => $template->name,
@@ -58,6 +64,11 @@ class TemplateController extends Controller
      */
     public function show(ReportTemplate $template)
     {
+        // Authorization: User can view if template is public OR user created it
+        if (!$template->is_public && $template->created_by !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         return response()->json([
             'id' => $template->id,
             'name' => $template->name,
@@ -79,6 +90,11 @@ class TemplateController extends Controller
      */
     public function execute(Request $request, ReportTemplate $template)
     {
+        // Authorization: User can execute if template is public OR user created it
+        if (!$template->is_public && $template->created_by !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         try {
             $appliedFilters = $request->input('filters', []);
             $viewType = $request->input('view_type', $template->default_view['type'] ?? 'table');

@@ -162,7 +162,7 @@ class BuilderController extends Controller
 
             // Create report template
             $template = ReportTemplate::create([
-                'user_id' => auth()->id(),
+                'created_by' => auth()->id(),
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
                 'model' => $validated['model'],

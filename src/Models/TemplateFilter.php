@@ -26,6 +26,8 @@ class TemplateFilter extends Model
         'options' => 'json',
         'is_required' => 'boolean',
         'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     /**

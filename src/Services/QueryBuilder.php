@@ -104,13 +104,14 @@ class QueryBuilder
 
         // Apply HAVING clause if provided
         if (!empty($config['having'])) {
+            $allowedOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'like', 'not like'];
             foreach ($config['having'] as $having) {
                 $column = $having['column'] ?? null;
-                $operator = $having['operator'] ?? '=';
+                $operator = strtolower($having['operator'] ?? '=');
                 $value = $having['value'] ?? null;
 
-                if ($column) {
-                    $query->havingRaw("{$column} {$operator} ?", [$value]);
+                if ($column && in_array($operator, $allowedOperators)) {
+                    $query->havingRaw("`{$column}` {$operator} ?", [$value]);
                 }
             }
         }

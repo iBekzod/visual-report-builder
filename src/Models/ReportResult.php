@@ -5,6 +5,7 @@ namespace Ibekzod\VisualReportBuilder\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class ReportResult extends Model
 {
@@ -24,6 +25,8 @@ class ReportResult extends Model
         'executed_at',
         'execution_time_ms',
         'is_favorite',
+        'view_count',
+        'last_viewed_at',
     ];
 
     protected $casts = [
@@ -32,6 +35,8 @@ class ReportResult extends Model
         'data' => 'json',
         'executed_at' => 'datetime',
         'is_favorite' => 'boolean',
+        'view_count' => 'integer',
+        'last_viewed_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -73,12 +78,14 @@ class ReportResult extends Model
     }
 
     /**
-     * Increment view count
+     * Increment view count (atomic operation)
      */
     public function recordView(): self
     {
-        $this->increment('view_count');
-        $this->update(['last_viewed_at' => now()]);
+        $this->update([
+            'view_count' => DB::raw('view_count + 1'),
+            'last_viewed_at' => now(),
+        ]);
         return $this;
     }
 

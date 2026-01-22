@@ -37,8 +37,8 @@ class ReportResource extends JsonResource
                     'can_share' => $share->can_share,
                 ];
             }),
-            'can_edit' => $this->canEdit(auth()->id()),
-            'can_share' => $this->canShare(auth()->id()),
+            'can_edit' => $this->user_id === auth()->id() || $this->shares->where('user_id', auth()->id())->first()?->can_edit,
+            'can_share' => $this->user_id === auth()->id() || $this->shares->where('user_id', auth()->id())->first()?->can_share,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

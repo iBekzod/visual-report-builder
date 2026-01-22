@@ -28,6 +28,10 @@ class DataSourceManager
         // Scan the models directory
         $files = scandir($path);
 
+        if ($files === false) {
+            return [];
+        }
+
         foreach ($files as $file) {
             if ($file === '.' || $file === '..' || !str_ends_with($file, '.php')) {
                 continue;
