@@ -2,7 +2,22 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['web', 'auth'])->prefix('visual-reports')->name('visual-reports.')->group(function () {
+// Build middleware stack based on config
+$middleware = ['web'];
+$webMiddleware = config('visual-report-builder.auth.web_middleware', 'auth');
+
+// Parse middleware - can be string (single or comma-separated) or array
+if (is_string($webMiddleware)) {
+    if (!empty(trim($webMiddleware))) {
+        // Handle comma-separated middleware
+        $parts = array_map('trim', explode(',', $webMiddleware));
+        $middleware = array_merge($middleware, $parts);
+    }
+} elseif (is_array($webMiddleware)) {
+    $middleware = array_merge($middleware, array_filter($webMiddleware));
+}
+
+Route::middleware($middleware)->prefix('visual-reports')->name('visual-reports.')->group(function () {
     // Main dashboard - Template-based reporting with 3-column layout
     Route::get('/', function () {
         return view('visual-report-builder::dashboard');

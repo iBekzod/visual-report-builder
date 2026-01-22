@@ -38,9 +38,16 @@ class ReportTemplateRole extends Model
     /**
      * Get the role
      */
-    public function role()
+    public function role(): BelongsTo
     {
-        $roleModel = config('auth.providers.roles.model', 'App\\Models\\Role');
+        // Use configurable role model from visual-report-builder config
+        $roleModel = config('visual-report-builder.models.role');
+
+        // Return null relationship if role model is not configured
+        if (!$roleModel) {
+            return $this->belongsTo(Role::class);
+        }
+
         return $this->belongsTo($roleModel);
     }
 

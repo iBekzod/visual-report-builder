@@ -55,7 +55,15 @@ class ReportResult extends Model
      */
     public function user(): BelongsTo
     {
-        $userModel = config('auth.providers.users.model', 'App\\Models\\User');
+        // Use configurable user model, fallback to Laravel's auth config
+        $userModel = config('visual-report-builder.models.user')
+            ?? config('auth.providers.users.model', 'App\\Models\\User');
+
+        // Return null relationship if user model is not configured
+        if (!$userModel) {
+            return $this->belongsTo(User::class);
+        }
+
         return $this->belongsTo($userModel);
     }
 

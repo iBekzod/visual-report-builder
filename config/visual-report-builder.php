@@ -20,6 +20,9 @@ return [
     // API middleware
     'api_middleware' => ['api', 'auth:sanctum'],
 
+    // Enable/disable authentication middleware
+    'require_auth' => env('VISUAL_REPORT_REQUIRE_AUTH', true),
+
     // Enable/disable specific exporters
     'exporters' => [
         'csv' => true,
@@ -35,17 +38,43 @@ return [
         'store' => env('VISUAL_REPORT_CACHE_STORE', 'default'),
     ],
 
-    // Model auto-discovery
+    // Model auto-discovery and configuration
     'models' => [
         'auto_discover' => env('VISUAL_REPORT_AUTO_DISCOVER', true),
         'namespace' => env('VISUAL_REPORT_MODEL_NAMESPACE', 'App\\Models'),
         'path' => env('VISUAL_REPORT_MODEL_PATH', app_path('Models')),
+
+        // User model class - set to null to disable user-based features
+        'user' => env('VISUAL_REPORT_USER_MODEL', 'App\\Models\\User'),
+
+        // Role model class - set to null to disable role-based features
+        'role' => env('VISUAL_REPORT_ROLE_MODEL', 'App\\Models\\Role'),
     ],
 
     // Authentication configuration
     'auth' => [
+        // Enable/disable authentication checks in controller logic
+        // Set to false to allow unauthenticated access (but can still use custom middleware)
+        'enabled' => env('VISUAL_REPORT_AUTH_ENABLED', true),
+
         'guard' => env('VISUAL_REPORT_AUTH_GUARD', 'web'),
         'verify_ownership' => env('VISUAL_REPORT_VERIFY_OWNERSHIP', true),
+
+        // Web route middleware - customize as needed
+        // Options:
+        //   'auth' - Laravel's default web auth
+        //   '' (empty string) - No middleware (public access)
+        //   'auth,custom-middleware' - Multiple middleware (comma-separated)
+        //   ['auth', 'custom'] - Array of middleware
+        'web_middleware' => env('VISUAL_REPORT_WEB_MIDDLEWARE', 'auth'),
+
+        // API route middleware - customize as needed
+        // Options:
+        //   'auth:sanctum' - Laravel's Sanctum auth (default)
+        //   '' (empty string) - No middleware (public access)
+        //   'auth:api,custom-middleware' - Multiple middleware (comma-separated)
+        //   ['auth:sanctum', 'custom'] - Array of middleware
+        'api_middleware' => env('VISUAL_REPORT_API_MIDDLEWARE', 'auth:sanctum'),
     ],
 
     // Export configuration

@@ -12,7 +12,7 @@ class DashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // Middleware is now configured at route level via config('visual-report-builder.auth.web_middleware')
     }
 
     /**
@@ -20,6 +20,13 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json([
+                'message' => 'Authentication is disabled',
+            ], 403);
+        }
+
         $userId = auth()->id();
 
         // Get statistics

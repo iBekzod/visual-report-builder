@@ -15,7 +15,7 @@ class TemplateController extends Controller
     public function __construct(TemplateExecutor $executor)
     {
         $this->executor = $executor;
-        $this->middleware('auth');
+        // Middleware is now configured at route level via config('visual-report-builder.auth.web_middleware')
     }
 
     /**
@@ -23,35 +23,60 @@ class TemplateController extends Controller
      */
     public function index()
     {
-        $user = auth()->user();
-        $templates = ReportTemplate::active()
-            ->where(function ($q) use ($user) {
-                $q->where('is_public', true)
-                    ->orWhere('created_by', $user->id);
-            })
-            ->with(['results' => function($q) use ($user) {
-                $q->where('user_id', $user->id);
-            }])
-            ->get()
-            ->map(function ($template) use ($user) {
-                return [
-                    'id' => $template->id,
-                    'name' => $template->name,
-                    'description' => $template->description,
-                    'icon' => $template->icon,
-                    'category' => $template->category,
-                    'model' => $template->model,
-                    'dimensions' => $template->getDimensions(),
-                    'metrics' => $template->getMetrics(),
-                    'filters' => $template->getFilters(),
-                    'default_view' => $template->default_view,
-                    'recent_results' => $template->results()
-                        ->byUser($user->id)
-                        ->latest()
-                        ->limit(3)
-                        ->get(['id', 'name', 'view_type', 'created_at'])
-                ];
-            });
+        // Check if auth is enabled
+        $authEnabled = config('visual-report-builder.auth.enabled', true);
+        $userId = $authEnabled ? auth()->id() : null;
+
+        if (!$authEnabled) {
+            // Return public templates only when auth is disabled
+            $templates = ReportTemplate::active()
+                ->where('is_public', true)
+                ->get()
+                ->map(function ($template) {
+                    return [
+                        'id' => $template->id,
+                        'name' => $template->name,
+                        'description' => $template->description,
+                        'icon' => $template->icon,
+                        'category' => $template->category,
+                        'model' => $template->model,
+                        'dimensions' => $template->getDimensions(),
+                        'metrics' => $template->getMetrics(),
+                        'filters' => $template->getFilters(),
+                        'default_view' => $template->default_view,
+                        'recent_results' => [],
+                    ];
+                });
+        } else {
+            $templates = ReportTemplate::active()
+                ->where(function ($q) use ($userId) {
+                    $q->where('is_public', true)
+                        ->orWhere('created_by', $userId);
+                })
+                ->with(['results' => function($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                }])
+                ->get()
+                ->map(function ($template) use ($userId) {
+                    return [
+                        'id' => $template->id,
+                        'name' => $template->name,
+                        'description' => $template->description,
+                        'icon' => $template->icon,
+                        'category' => $template->category,
+                        'model' => $template->model,
+                        'dimensions' => $template->getDimensions(),
+                        'metrics' => $template->getMetrics(),
+                        'filters' => $template->getFilters(),
+                        'default_view' => $template->default_view,
+                        'recent_results' => $template->results()
+                            ->byUser($userId)
+                            ->latest()
+                            ->limit(3)
+                            ->get(['id', 'name', 'view_type', 'created_at'])
+                    ];
+                });
+        }
 
         return response()->json([
             'templates' => $templates,
@@ -64,8 +89,11 @@ class TemplateController extends Controller
      */
     public function show(ReportTemplate $template)
     {
-        // Authorization: User can view if template is public OR user created it
-        if (!$template->is_public && $template->created_by !== auth()->id()) {
+        // Check if auth is enabled
+        $authEnabled = config('visual-report-builder.auth.enabled', true);
+
+        // Authorization: User can view if template is public OR (auth is enabled AND user created it)
+        if (!$template->is_public && ($authEnabled && $template->created_by !== auth()->id())) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -90,8 +118,11 @@ class TemplateController extends Controller
      */
     public function execute(Request $request, ReportTemplate $template)
     {
-        // Authorization: User can execute if template is public OR user created it
-        if (!$template->is_public && $template->created_by !== auth()->id()) {
+        // Check if auth is enabled
+        $authEnabled = config('visual-report-builder.auth.enabled', true);
+
+        // Authorization: User can execute if template is public OR (auth is enabled AND user created it)
+        if (!$template->is_public && ($authEnabled && $template->created_by !== auth()->id())) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -130,6 +161,11 @@ class TemplateController extends Controller
      */
     public function saveResult(Request $request, ReportTemplate $template)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -163,6 +199,11 @@ class TemplateController extends Controller
      */
     public function savedReports(Request $request, ReportTemplate $template)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json([]);
+        }
+
         $reports = $template->results()
             ->byUser(auth()->id())
             ->latest()
@@ -185,6 +226,11 @@ class TemplateController extends Controller
      */
     public function loadResult(ReportResult $result)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         // Check authorization
         if ($result->user_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -210,6 +256,11 @@ class TemplateController extends Controller
      */
     public function toggleFavorite(ReportResult $result)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         if ($result->user_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -228,6 +279,11 @@ class TemplateController extends Controller
      */
     public function export(Request $request, ReportResult $result)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         if ($result->user_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -261,6 +317,11 @@ class TemplateController extends Controller
      */
     public function deleteResult(ReportResult $result)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         if ($result->user_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -275,6 +336,11 @@ class TemplateController extends Controller
      */
     public function share(Request $request, ReportResult $result)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         if ($result->user_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -296,6 +362,11 @@ class TemplateController extends Controller
      */
     public function unshare(Request $request, ReportResult $result)
     {
+        // Check if auth is enabled
+        if (!config('visual-report-builder.auth.enabled', true)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         if ($result->user_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }

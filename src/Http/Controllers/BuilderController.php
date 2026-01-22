@@ -14,7 +14,7 @@ class BuilderController extends Controller
 
     public function __construct(DataSourceManager $dataSourceManager)
     {
-        $this->middleware('auth');
+        // Middleware is now configured at route level via config('visual-report-builder.auth.api_middleware')
         $this->dataSourceManager = $dataSourceManager;
     }
 
@@ -139,6 +139,14 @@ class BuilderController extends Controller
     public function saveTemplate(Request $request)
     {
         try {
+            // Check if auth is enabled
+            if (!config('visual-report-builder.auth.enabled', true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',

@@ -5,7 +5,22 @@ use Ibekzod\VisualReportBuilder\Http\Controllers\TemplateController;
 use Ibekzod\VisualReportBuilder\Http\Controllers\BuilderController;
 use Ibekzod\VisualReportBuilder\Http\Controllers\DashboardController;
 
-Route::middleware(['api', 'auth:sanctum'])->prefix('api/visual-reports')->name('visual-reports.')->group(function () {
+// Build middleware stack based on config
+$apiMiddleware = ['api'];
+$apiMiddlewareConfig = config('visual-report-builder.auth.api_middleware', 'auth:sanctum');
+
+// Parse middleware - can be string (single or comma-separated) or array
+if (is_string($apiMiddlewareConfig)) {
+    if (!empty(trim($apiMiddlewareConfig))) {
+        // Handle comma-separated middleware
+        $parts = array_map('trim', explode(',', $apiMiddlewareConfig));
+        $apiMiddleware = array_merge($apiMiddleware, $parts);
+    }
+} elseif (is_array($apiMiddlewareConfig)) {
+    $apiMiddleware = array_merge($apiMiddleware, array_filter($apiMiddlewareConfig));
+}
+
+Route::middleware($apiMiddleware)->prefix('api/visual-reports')->name('visual-reports.')->group(function () {
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
