@@ -6,7 +6,9 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nConsolidate documentation: single comprehensive README\n\nReplace 20+ documentation files with a single, comprehensive README.md that serves as:\n1. Installation guide for package installers\n2. Complete usage reference \\(Web UI, PHP, API\\)\n3. Architecture overview for developers\n4. AI assistant context for future enhancements\n\nThe new README covers:\n- Quick start \\(3 steps to working dashboard\\)\n- Architecture overview \\(workflows & components\\)\n- Usage examples \\(UI, PHP code, REST API\\)\n- Complete API reference \\(11+ endpoints\\)\n- Configuration \\(all options with env vars\\)\n- Features in detail \\(auto-discovery, builder, execution, relationships\\)\n- Security considerations\n- Troubleshooting guide\n- Files overview with code locations\n- Special AI assistant section with design patterns\n\nDeleted files:\n- All separate setup guides \\(SETUP_GUIDE, REBUILD_SETUP, etc.\\)\n- All architecture docs \\(REBUILD_ARCHITECTURE, BUILD_SUMMARY, etc.\\)\n- All API docs \\(REBUILD_API, POSTMAN_GUIDE, etc.\\)\n- All index/summary files\n- Temporary package files\n\nResult: Single source of truth. Easier to maintain and keep updated.\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit:*)",
       "Bash(php -l:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git push:*)",
+      "Bash(git tag:*)"
     ]
   }
 }
