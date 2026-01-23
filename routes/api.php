@@ -20,7 +20,7 @@ if (is_string($apiMiddlewareConfig)) {
     $apiMiddleware = array_merge($apiMiddleware, array_filter($apiMiddlewareConfig));
 }
 
-Route::middleware($apiMiddleware)->prefix('api/visual-reports')->name('visual-reports.')->group(function () {
+Route::middleware($apiMiddleware)->prefix('api/visual-reports')->name('visual-reports.api.')->group(function () {
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
