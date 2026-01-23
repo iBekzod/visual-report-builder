@@ -102,25 +102,10 @@ class VisualReportBuilderServiceProvider extends ServiceProvider
             __DIR__.'/../config/visual-report-builder.php' => config_path('visual-report-builder.php'),
         ], 'visual-report-builder-config');
 
-        // Publish assets
-        $this->publishes([
-            __DIR__.'/../resources/assets' => public_path('vendor/visual-report-builder'),
-        ], 'visual-report-builder-assets');
-
         // Publish views
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/visual-report-builder'),
         ], 'visual-report-builder-views');
-
-        // Publish seeders
-        $this->publishes([
-            __DIR__.'/../database/seeders' => database_path('seeders'),
-        ], 'visual-report-builder-seeders');
-
-        // Publish language files
-        $this->publishes([
-            __DIR__.'/../resources/lang' => lang_path('vendor/visual-report-builder'),
-        ], 'visual-report-builder-lang');
 
         // Register commands if any
         if ($this->app->runningInConsole()) {
