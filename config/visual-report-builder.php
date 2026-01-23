@@ -33,7 +33,7 @@ return [
 
     // Caching configuration
     'cache' => [
-        'enabled' => env('VISUAL_REPORT_CACHE_ENABLED', true),
+        'enabled' => env('VISUAL_REPORT_CACHE_ENABLED', false),
         'ttl' => env('VISUAL_REPORT_CACHE_TTL', 3600), // 1 hour
         'store' => env('VISUAL_REPORT_CACHE_STORE', 'default'),
     ],
