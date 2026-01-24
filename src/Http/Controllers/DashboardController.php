@@ -21,7 +21,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json([
                 'message' => 'Authentication is disabled',
             ], 403);

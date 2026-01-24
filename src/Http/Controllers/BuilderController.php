@@ -140,7 +140,7 @@ class BuilderController extends Controller
     {
         try {
             // Check if auth is enabled
-            if (!config('visual-report-builder.auth.enabled', true)) {
+            if (!config('visual-report-builder.auth.enabled', false)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized',

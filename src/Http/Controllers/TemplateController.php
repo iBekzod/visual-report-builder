@@ -24,7 +24,7 @@ class TemplateController extends Controller
     public function index()
     {
         // Check if auth is enabled
-        $authEnabled = config('visual-report-builder.auth.enabled', true);
+        $authEnabled = config('visual-report-builder.auth.enabled', false);
         $userId = $authEnabled ? auth()->id() : null;
 
         if (!$authEnabled) {
@@ -90,7 +90,7 @@ class TemplateController extends Controller
     public function show(ReportTemplate $template)
     {
         // Check if auth is enabled
-        $authEnabled = config('visual-report-builder.auth.enabled', true);
+        $authEnabled = config('visual-report-builder.auth.enabled', false);
 
         // Authorization: User can view if template is public OR (auth is enabled AND user created it)
         if (!$template->is_public && ($authEnabled && $template->created_by !== auth()->id())) {
@@ -119,7 +119,7 @@ class TemplateController extends Controller
     public function execute(Request $request, ReportTemplate $template)
     {
         // Check if auth is enabled
-        $authEnabled = config('visual-report-builder.auth.enabled', true);
+        $authEnabled = config('visual-report-builder.auth.enabled', false);
 
         // Authorization: User can execute if template is public OR (auth is enabled AND user created it)
         if (!$template->is_public && ($authEnabled && $template->created_by !== auth()->id())) {
@@ -162,7 +162,7 @@ class TemplateController extends Controller
     public function saveResult(Request $request, ReportTemplate $template)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -200,7 +200,7 @@ class TemplateController extends Controller
     public function savedReports(Request $request, ReportTemplate $template)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json([]);
         }
 
@@ -227,7 +227,7 @@ class TemplateController extends Controller
     public function loadResult(ReportResult $result)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -257,7 +257,7 @@ class TemplateController extends Controller
     public function toggleFavorite(ReportResult $result)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -280,7 +280,7 @@ class TemplateController extends Controller
     public function export(Request $request, ReportResult $result)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -318,7 +318,7 @@ class TemplateController extends Controller
     public function deleteResult(ReportResult $result)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -337,7 +337,7 @@ class TemplateController extends Controller
     public function share(Request $request, ReportResult $result)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -363,7 +363,7 @@ class TemplateController extends Controller
     public function unshare(Request $request, ReportResult $result)
     {
         // Check if auth is enabled
-        if (!config('visual-report-builder.auth.enabled', true)) {
+        if (!config('visual-report-builder.auth.enabled', false)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
