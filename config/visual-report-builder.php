@@ -39,42 +39,47 @@ return [
     ],
 
     // Model auto-discovery and configuration
+    // DISABLED BY DEFAULT - Enable only if your project has these models
     'models' => [
-        'auto_discover' => env('VISUAL_REPORT_AUTO_DISCOVER', true),
+        // Auto-discovery disabled by default - explicitly enable if needed
+        'auto_discover' => env('VISUAL_REPORT_AUTO_DISCOVER', false),
         'namespace' => env('VISUAL_REPORT_MODEL_NAMESPACE', 'App\\Models'),
         'path' => env('VISUAL_REPORT_MODEL_PATH', app_path('Models')),
 
-        // User model class - set to null to disable user-based features
-        'user' => env('VISUAL_REPORT_USER_MODEL', 'App\\Models\\User'),
+        // User model - null by default (assume no user model exists)
+        // Set explicitly only if your project has a User model
+        'user' => env('VISUAL_REPORT_USER_MODEL', null),
 
-        // Role model class - set to null to disable role-based features
-        'role' => env('VISUAL_REPORT_ROLE_MODEL', 'App\\Models\\Role'),
+        // Role model - null by default (assume no role model exists)
+        // Set explicitly only if your project has a Role model
+        'role' => env('VISUAL_REPORT_ROLE_MODEL', null),
     ],
 
     // Authentication configuration
+    // DISABLED BY DEFAULT - Enable only if your project uses authentication
     'auth' => [
         // Enable/disable authentication checks in controller logic
-        // Set to false to allow unauthenticated access (but can still use custom middleware)
-        'enabled' => env('VISUAL_REPORT_AUTH_ENABLED', true),
+        // Set to false to allow unauthenticated public access
+        'enabled' => env('VISUAL_REPORT_AUTH_ENABLED', false),
 
         'guard' => env('VISUAL_REPORT_AUTH_GUARD', 'web'),
-        'verify_ownership' => env('VISUAL_REPORT_VERIFY_OWNERSHIP', true),
+        'verify_ownership' => env('VISUAL_REPORT_VERIFY_OWNERSHIP', false),
 
-        // Web route middleware - customize as needed
+        // Web route middleware - empty by default (public access)
         // Options:
         //   'auth' - Laravel's default web auth
-        //   '' (empty string) - No middleware (public access)
+        //   '' (empty string) - No middleware (public access - default)
         //   'auth,custom-middleware' - Multiple middleware (comma-separated)
         //   ['auth', 'custom'] - Array of middleware
-        'web_middleware' => env('VISUAL_REPORT_WEB_MIDDLEWARE', 'auth'),
+        'web_middleware' => env('VISUAL_REPORT_WEB_MIDDLEWARE', ''),
 
-        // API route middleware - customize as needed
+        // API route middleware - empty by default (public access)
         // Options:
-        //   'auth:sanctum' - Laravel's Sanctum auth (default)
-        //   '' (empty string) - No middleware (public access)
+        //   'auth:sanctum' - Laravel's Sanctum auth
+        //   '' (empty string) - No middleware (public access - default)
         //   'auth:api,custom-middleware' - Multiple middleware (comma-separated)
         //   ['auth:sanctum', 'custom'] - Array of middleware
-        'api_middleware' => env('VISUAL_REPORT_API_MIDDLEWARE', 'auth:sanctum'),
+        'api_middleware' => env('VISUAL_REPORT_API_MIDDLEWARE', ''),
     ],
 
     // Export configuration
