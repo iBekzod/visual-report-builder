@@ -605,8 +605,8 @@
                     category: category,
                     icon: icon,
                     model: reportConfig.model,
-                    row_dimensions: reportConfig.row_dimensions.map(d => d.column),
-                    column_dimensions: reportConfig.column_dimensions.map(d => d.column),
+                    row_dimensions: reportConfig.row_dimensions,
+                    column_dimensions: reportConfig.column_dimensions,
                     metrics: reportConfig.metrics,
                     filters: [],
                     default_view: { type: 'table' }
