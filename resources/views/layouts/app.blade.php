@@ -149,10 +149,14 @@
         <div class="navbar-menu">
             <a href="{{ route('visual-reports.dashboard') }}">Dashboard</a>
             <a href="{{ route('visual-reports.builder') }}">Builder</a>
-            <form action="{{ route('logout') }}" method="POST" style="display: inline;">
-                @csrf
-                <button type="submit" class="btn" style="padding: 0.5rem 1rem;">Logout</button>
-            </form>
+            @if(Route::has('logout'))
+                <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn" style="padding: 0.5rem 1rem;">Logout</button>
+                </form>
+            @elseif(auth()->check())
+                <span style="padding: 0.5rem 1rem; color: #666;">{{ auth()->user()->name ?? 'User' }}</span>
+            @endif
         </div>
     </nav>
 

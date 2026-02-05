@@ -79,7 +79,7 @@ class AggregateCalculator
     /**
      * Calculate count of records
      */
-    protected function calculateCount(Collection $collection, string $column = null): int
+    protected function calculateCount(Collection $collection, ?string $column = null): int
     {
         if ($column) {
             return $collection->where($column, '!=', null)->count();
