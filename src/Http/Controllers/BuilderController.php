@@ -139,12 +139,16 @@ class BuilderController extends Controller
     public function saveTemplate(Request $request)
     {
         try {
-            // Check if auth is enabled
-            if (!config('visual-report-builder.auth.enabled', false)) {
+            // Check if auth is enabled and user is authenticated
+            $authEnabled = config('visual-report-builder.auth.enabled', false);
+            $userId = auth()->id();
+
+            // If auth is enabled, user must be authenticated
+            if ($authEnabled && !$userId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized',
-                ], 403);
+                    'message' => 'Unauthorized - Please login to save templates',
+                ], 401);
             }
 
             $validated = $request->validate([
@@ -168,9 +172,9 @@ class BuilderController extends Controller
                 ], 422);
             }
 
-            // Create report template
+            // Create report template - set created_by to null if auth is disabled
             $template = ReportTemplate::create([
-                'created_by' => auth()->id(),
+                'created_by' => $userId, // Will be null if auth is disabled
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
                 'model' => $validated['model'],

@@ -12,12 +12,50 @@ class TemplateExecutor
     protected FilterManager $filterManager;
     protected AggregateCalculator $aggregateCalculator;
 
+    /**
+     * Database driver name
+     */
+    protected ?string $driver = null;
+
     public function __construct(
         FilterManager $filterManager,
         AggregateCalculator $aggregateCalculator
     ) {
         $this->filterManager = $filterManager;
         $this->aggregateCalculator = $aggregateCalculator;
+    }
+
+    /**
+     * Get the identifier quote character for the current database driver
+     *
+     * @param Builder $query
+     * @return string
+     */
+    protected function getQuoteChar(Builder $query): string
+    {
+        if ($this->driver === null) {
+            $this->driver = $query->getConnection()->getDriverName();
+        }
+
+        return match ($this->driver) {
+            'mysql', 'mariadb' => '`',
+            'pgsql' => '"',
+            'sqlite' => '"',
+            'sqlsrv' => '"',
+            default => '"',
+        };
+    }
+
+    /**
+     * Quote an identifier for SQL
+     *
+     * @param string $identifier
+     * @param string $quoteChar
+     * @return string
+     */
+    protected function quoteIdentifier(string $identifier, string $quoteChar): string
+    {
+        return $quoteChar . $identifier . $quoteChar;
     }
 
     /**
@@ -134,10 +172,12 @@ class TemplateExecutor
      */
     protected function queryData(Builder $query, array $dimensions, array $metrics): Collection|array
     {
+        $q = $this->getQuoteChar($query);
+
         // Select dimensions
         $selectColumns = [];
         foreach ($dimensions as $dim) {
-            $selectColumns[] = $dim['column'];
+            $selectColumns[] = $this->quoteIdentifier($dim['column'], $q);
         }
 
         // Add metrics as aggregates
@@ -146,12 +186,12 @@ class TemplateExecutor
             $aggregate = $metric['aggregate'] ?? 'sum';
             $alias = $metric['alias'] ?? "{$column}_{$aggregate}";
 
-            $selectColumns[] = $this->buildAggregateSelect($column, $aggregate, $alias);
+            $selectColumns[] = $this->buildAggregateSelect($column, $aggregate, $alias, $q);
         }
 
         // Build select statement
         if (!empty($selectColumns)) {
-            $query->selectRaw(implode(', ', array_filter($selectColumns, 'is_string')));
+            $query->selectRaw(implode(', ', $selectColumns));
         }
 
         // Group by dimensions
@@ -169,19 +209,23 @@ class TemplateExecutor
      * @param string $column
      * @param string $aggregate
      * @param string $alias
+     * @param string $q Quote character for identifiers
      * @return string
      */
-    protected function buildAggregateSelect(string $column, string $aggregate, string $alias): string
+    protected function buildAggregateSelect(string $column, string $aggregate, string $alias, string $q = '"'): string
     {
+        $quotedColumn = $this->quoteIdentifier($column, $q);
+        $quotedAlias = $this->quoteIdentifier($alias, $q);
+
         return match ($aggregate) {
-            'sum' => "SUM(`{$column}`) as `{$alias}`",
-            'avg' => "AVG(`{$column}`) as `{$alias}`",
-            'min' => "MIN(`{$column}`) as `{$alias}`",
-            'max' => "MAX(`{$column}`) as `{$alias}`",
-            'count' => "COUNT(`{$column}`) as `{$alias}`",
-            'count_distinct' => "COUNT(DISTINCT `{$column}`) as `{$alias}`",
-            'value' => "`{$column}` as `{$alias}`",
-            default => "`{$column}` as `{$alias}`",
+            'sum' => "SUM({$quotedColumn}) as {$quotedAlias}",
+            'avg' => "AVG({$quotedColumn}) as {$quotedAlias}",
+            'min' => "MIN({$quotedColumn}) as {$quotedAlias}",
+            'max' => "MAX({$quotedColumn}) as {$quotedAlias}",
+            'count' => "COUNT({$quotedColumn}) as {$quotedAlias}",
+            'count_distinct' => "COUNT(DISTINCT {$quotedColumn}) as {$quotedAlias}",
+            'value' => "{$quotedColumn} as {$quotedAlias}",
+            default => "{$quotedColumn} as {$quotedAlias}",
         };
     }
 }

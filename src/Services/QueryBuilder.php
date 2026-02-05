@@ -9,9 +9,47 @@ class QueryBuilder
 {
     protected FilterManager $filterManager;
 
+    /**
+     * Database driver name
+     */
+    protected ?string $driver = null;
+
     public function __construct()
     {
         $this->filterManager = new FilterManager();
+    }
+
+    /**
+     * Get the identifier quote character for the current database driver
+     *
+     * @param Builder $query
+     * @return string
+     */
+    protected function getQuoteChar(Builder $query): string
+    {
+        if ($this->driver === null) {
+            $this->driver = $query->getConnection()->getDriverName();
+        }
+
+        return match ($this->driver) {
+            'mysql', 'mariadb' => '`',
+            'pgsql' => '"',
+            'sqlite' => '"',
+            'sqlsrv' => '"',
+            default => '"',
+        };
+    }
+
+    /**
+     * Quote an identifier for SQL
+     *
+     * @param string $identifier
+     * @param string $quoteChar
+     * @return string
+     */
+    protected function quoteIdentifier(string $identifier, string $quoteChar): string
+    {
+        return $quoteChar . $identifier . $quoteChar;
     }
 
     /**
@@ -28,6 +66,7 @@ class QueryBuilder
         }
 
         $query = $model::query();
+        $q = $this->getQuoteChar($query);
 
         // Add dimensions to select
         $dimensions = $config['row_dimensions'] ?? [];
@@ -49,7 +88,7 @@ class QueryBuilder
             $alias = $metric['alias'] ?? "{$column}_{$aggregate}";
 
             if ($column) {
-                $selectColumns[] = $this->buildAggregateSelect($column, $aggregate, $alias);
+                $selectColumns[] = $this->buildAggregateSelect($column, $aggregate, $alias, $q);
             }
         }
 
@@ -67,7 +106,8 @@ class QueryBuilder
             )));
 
             // Select dimensions
-            $query->selectRaw('`' . implode('`, `', $allDims) . '`');
+            $quotedDims = array_map(fn($dim) => $this->quoteIdentifier($dim, $q), $allDims);
+            $query->selectRaw(implode(', ', $quotedDims));
 
             // Add metric aggregates
             foreach ($config['metrics'] ?? [] as $metric) {
@@ -76,7 +116,7 @@ class QueryBuilder
                 $alias = $metric['alias'] ?? "{$column}_{$aggregate}";
 
                 if ($column) {
-                    $query->selectRaw($this->buildAggregateSelect($column, $aggregate, $alias));
+                    $query->selectRaw($this->buildAggregateSelect($column, $aggregate, $alias, $q));
                 }
             }
         } else {
@@ -87,7 +127,7 @@ class QueryBuilder
                 $alias = $metric['alias'] ?? "{$column}_{$aggregate}";
 
                 if ($column) {
-                    $query->selectRaw($this->buildAggregateSelect($column, $aggregate, $alias));
+                    $query->selectRaw($this->buildAggregateSelect($column, $aggregate, $alias, $q));
                 }
             }
         }
@@ -111,7 +151,8 @@ class QueryBuilder
                 $value = $having['value'] ?? null;
 
                 if ($column && in_array($operator, $allowedOperators)) {
-                    $query->havingRaw("`{$column}` {$operator} ?", [$value]);
+                    $quotedColumn = $this->quoteIdentifier($column, $q);
+                    $query->havingRaw("{$quotedColumn} {$operator} ?", [$value]);
                 }
             }
         }
@@ -150,18 +191,22 @@ class QueryBuilder
      * @param string $column
      * @param string $aggregate
      * @param string $alias
+     * @param string $q Quote character for identifiers
      * @return string
      */
-    protected function buildAggregateSelect(string $column, string $aggregate, string $alias): string
+    protected function buildAggregateSelect(string $column, string $aggregate, string $alias, string $q = '"'): string
     {
+        $quotedColumn = $this->quoteIdentifier($column, $q);
+        $quotedAlias = $this->quoteIdentifier($alias, $q);
+
         return match ($aggregate) {
-            'sum' => "SUM(`{$column}`) as `{$alias}`",
-            'avg' => "AVG(`{$column}`) as `{$alias}`",
-            'min' => "MIN(`{$column}`) as `{$alias}`",
-            'max' => "MAX(`{$column}`) as `{$alias}`",
-            'count' => "COUNT(`{$column}`) as `{$alias}`",
-            'count_distinct' => "COUNT(DISTINCT `{$column}`) as `{$alias}`",
-            'value' => "`{$column}` as `{$alias}`",
+            'sum' => "SUM({$quotedColumn}) as {$quotedAlias}",
+            'avg' => "AVG({$quotedColumn}) as {$quotedAlias}",
+            'min' => "MIN({$quotedColumn}) as {$quotedAlias}",
+            'max' => "MAX({$quotedColumn}) as {$quotedAlias}",
+            'count' => "COUNT({$quotedColumn}) as {$quotedAlias}",
+            'count_distinct' => "COUNT(DISTINCT {$quotedColumn}) as {$quotedAlias}",
+            'value' => "{$quotedColumn} as {$quotedAlias}",
             default => "{$column} as {$alias}",
         };
     }

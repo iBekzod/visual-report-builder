@@ -389,13 +389,13 @@ class TemplateController extends Controller
 
         foreach ($metrics as $metric) {
             $column = $metric['alias'] ?? $metric['column'];
-            $values = array_column($data, $column);
+            $values = array_filter(array_column($data, $column), fn($v) => is_numeric($v));
 
             $summary[$column] = [
-                'sum' => array_sum($values),
+                'sum' => !empty($values) ? array_sum($values) : 0,
                 'avg' => count($values) > 0 ? array_sum($values) / count($values) : 0,
-                'min' => min($values) ?: 0,
-                'max' => max($values) ?: 0,
+                'min' => !empty($values) ? min($values) : 0,
+                'max' => !empty($values) ? max($values) : 0,
                 'count' => count($values),
             ];
         }

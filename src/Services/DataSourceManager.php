@@ -9,6 +9,12 @@ use ReflectionClass;
 class DataSourceManager
 {
     /**
+     * Cache for column types to avoid repeated queries
+     *
+     * @var array
+     */
+    protected array $columnTypeCache = [];
+    /**
      * Get available Eloquent models
      *
      * @return array
@@ -138,10 +144,11 @@ class DataSourceManager
                 continue;
             }
 
-            $type = $model->getConnection()->getSchemaBuilder()->getColumnType($model->getTable(), $column);
+            // Use our native type detection instead of Doctrine DBAL
+            $type = $this->guessColumnType($model, $column);
 
             // Include numeric and money columns
-            if (in_array($type, ['integer', 'bigInteger', 'decimal', 'double', 'float', 'unsignedInteger', 'unsignedBigInteger'])) {
+            if (in_array($type, ['integer', 'number'])) {
                 $metrics[] = [
                     'column' => $column,
                     'label' => $this->humanizeColumnName($column),
@@ -161,7 +168,7 @@ class DataSourceManager
     }
 
     /**
-     * Guess column type for display
+     * Guess column type for display - uses native database introspection
      *
      * @param Model $model
      * @param string $column
@@ -169,15 +176,181 @@ class DataSourceManager
      */
     protected function guessColumnType(Model $model, string $column): string
     {
-        $type = $model->getConnection()->getSchemaBuilder()->getColumnType($model->getTable(), $column);
+        $table = $model->getTable();
+        $cacheKey = $table . '.' . $column;
 
-        return match ($type) {
-            'date', 'datetime' => 'date',
-            'boolean' => 'boolean',
-            'integer', 'bigInteger', 'unsignedInteger', 'unsignedBigInteger' => 'integer',
-            'decimal', 'double', 'float' => 'number',
-            default => 'string',
-        };
+        if (isset($this->columnTypeCache[$cacheKey])) {
+            return $this->columnTypeCache[$cacheKey];
+        }
+
+        $type = $this->getColumnTypeNative($model, $column);
+
+        $this->columnTypeCache[$cacheKey] = $type;
+
+        return $type;
+    }
+
+    /**
+     * Get column type using native database introspection (no Doctrine DBAL)
+     *
+     * @param Model $model
+     * @param string $column
+     * @return string
+     */
+    protected function getColumnTypeNative(Model $model, string $column): string
+    {
+        try {
+            $connection = $model->getConnection();
+            $table = $model->getTable();
+            $driver = $connection->getDriverName();
+
+            // Try to get column info based on database driver
+            $rawType = $this->getRawColumnType($connection, $table, $column, $driver);
+
+            return $this->normalizeColumnType($rawType, $column);
+        } catch (\Exception $e) {
+            // Fallback: guess from column name
+            return $this->guessTypeFromColumnName($column);
+        }
+    }
+
+    /**
+     * Get raw column type from database
+     *
+     * @param mixed $connection
+     * @param string $table
+     * @param string $column
+     * @param string $driver
+     * @return string
+     */
+    protected function getRawColumnType($connection, string $table, string $column, string $driver): string
+    {
+        try {
+            switch ($driver) {
+                case 'mysql':
+                case 'mariadb':
+                    $result = $connection->select(
+                        "SELECT DATA_TYPE, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+                         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                        [$table, $column]
+                    );
+                    return $result[0]->DATA_TYPE ?? 'varchar';
+
+                case 'pgsql':
+                    $result = $connection->select(
+                        "SELECT data_type, udt_name FROM information_schema.columns
+                         WHERE table_name = ? AND column_name = ?",
+                        [$table, $column]
+                    );
+                    return $result[0]->data_type ?? $result[0]->udt_name ?? 'varchar';
+
+                case 'sqlite':
+                    $result = $connection->select("PRAGMA table_info({$table})");
+                    foreach ($result as $col) {
+                        if ($col->name === $column) {
+                            return strtolower($col->type);
+                        }
+                    }
+                    return 'text';
+
+                case 'sqlsrv':
+                    $result = $connection->select(
+                        "SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+                         WHERE TABLE_NAME = ? AND COLUMN_NAME = ?",
+                        [$table, $column]
+                    );
+                    return $result[0]->DATA_TYPE ?? 'varchar';
+
+                default:
+                    return 'varchar';
+            }
+        } catch (\Exception $e) {
+            return 'varchar';
+        }
+    }
+
+    /**
+     * Normalize database-specific type to generic type
+     *
+     * @param string $rawType
+     * @param string $column
+     * @return string
+     */
+    protected function normalizeColumnType(string $rawType, string $column): string
+    {
+        $rawType = strtolower(trim($rawType));
+
+        // Date/time types
+        if (in_array($rawType, ['date', 'datetime', 'timestamp', 'timestamptz', 'timestamp without time zone', 'timestamp with time zone', 'time', 'timetz'])) {
+            return 'date';
+        }
+
+        // Boolean types
+        if (in_array($rawType, ['boolean', 'bool', 'tinyint'])) {
+            // tinyint(1) is often used as boolean in MySQL
+            if ($rawType === 'tinyint' && (str_contains($column, 'is_') || str_contains($column, 'has_') || str_contains($column, 'can_'))) {
+                return 'boolean';
+            }
+            if ($rawType !== 'tinyint') {
+                return 'boolean';
+            }
+        }
+
+        // Integer types
+        if (in_array($rawType, ['integer', 'int', 'int2', 'int4', 'int8', 'smallint', 'mediumint', 'bigint', 'tinyint', 'serial', 'bigserial', 'smallserial'])) {
+            return 'integer';
+        }
+
+        // Decimal/float types
+        if (in_array($rawType, ['decimal', 'numeric', 'float', 'float4', 'float8', 'double', 'double precision', 'real', 'money'])) {
+            return 'number';
+        }
+
+        // JSON types
+        if (in_array($rawType, ['json', 'jsonb'])) {
+            return 'json';
+        }
+
+        // Array types (PostgreSQL)
+        if (str_starts_with($rawType, '_') || str_contains($rawType, '[]')) {
+            return 'array';
+        }
+
+        // Default to string
+        return 'string';
+    }
+
+    /**
+     * Guess type from column name when database introspection fails
+     *
+     * @param string $column
+     * @return string
+     */
+    protected function guessTypeFromColumnName(string $column): string
+    {
+        $column = strtolower($column);
+
+        // Boolean patterns
+        if (str_starts_with($column, 'is_') || str_starts_with($column, 'has_') || str_starts_with($column, 'can_') || str_starts_with($column, 'should_')) {
+            return 'boolean';
+        }
+
+        // Date patterns
+        if (str_contains($column, '_at') || str_contains($column, '_date') || str_contains($column, 'date_') || $column === 'date' || $column === 'birthday' || $column === 'dob') {
+            return 'date';
+        }
+
+        // Numeric patterns
+        if (str_contains($column, 'amount') || str_contains($column, 'price') || str_contains($column, 'cost') || str_contains($column, 'total') || str_contains($column, 'balance') || str_contains($column, 'rate') || str_contains($column, 'quantity') || str_contains($column, 'count') || str_contains($column, 'number') || str_contains($column, 'percent') || str_contains($column, 'score')) {
+            return 'number';
+        }
+
+        // ID patterns (integer)
+        if ($column === 'id' || str_ends_with($column, '_id')) {
+            return 'integer';
+        }
+
+        return 'string';
     }
 
     /**

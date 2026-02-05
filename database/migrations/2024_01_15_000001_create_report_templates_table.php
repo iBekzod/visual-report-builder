@@ -34,7 +34,7 @@ return new class extends Migration
                 $table->boolean('is_active')->default(true);
                 $table->boolean('is_public')->default(false);
 
-                $table->foreignId('created_by')->constrained('users');
+                $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamps();
                 $table->softDeletes();
 
