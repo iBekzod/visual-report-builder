@@ -1,5 +1,6 @@
 {
     "name": "ibekzod/visual-report-builder",
+    "version": "1.0.12",
     "description": "Visual Report Builder for Laravel - Build multi-dimensional pivot tables and reports without code. Like Kyubit.com",
     "type": "library",
     "license": "MIT",
