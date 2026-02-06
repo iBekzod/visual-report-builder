@@ -569,7 +569,7 @@
 </div>
 
 <!-- Save Template Modal -->
-<div id="saveModal" class="modal-backdrop" style="display: none;">
+<div id="saveModal" class="modal-backdrop">
     <div class="modal" style="max-width: 480px;">
         <div class="modal-header">
             <h2>Save Template</h2>
@@ -1136,13 +1136,13 @@
             return;
         }
 
-        document.getElementById('saveModal').style.display = 'flex';
+        document.getElementById('saveModal').classList.add('active');
         document.getElementById('templateName').focus();
     }
 
     // Close modal
     function closeSaveModal() {
-        document.getElementById('saveModal').style.display = 'none';
+        document.getElementById('saveModal').classList.remove('active');
     }
 
     // Confirm save
@@ -1198,12 +1198,18 @@
                 closeSaveModal();
                 showNotification(`Template "${name}" created successfully!`, 'success');
                 setTimeout(() => {
-                    window.location.href = '/visual-reports';
+                    window.location.href = '{{ route("visual-reports.dashboard") }}';
                 }, 1000);
             } else {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = originalContent;
-                showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+                // Handle validation errors
+                if (response.errors) {
+                    const errorMessages = Object.values(response.errors).flat().join(', ');
+                    showNotification('Validation error: ' + errorMessages, 'error');
+                } else {
+                    showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+                }
             }
         } catch (error) {
             console.error('Error saving template:', error);
@@ -1222,7 +1228,7 @@
 
     // Handle Escape key to close modal
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && document.getElementById('saveModal').style.display === 'flex') {
+        if (e.key === 'Escape' && document.getElementById('saveModal').classList.contains('active')) {
             closeSaveModal();
         }
     });
@@ -1230,9 +1236,9 @@
     // Clear form when opening modal
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
-            if (mutation.attributeName === 'style') {
+            if (mutation.attributeName === 'class') {
                 const modal = document.getElementById('saveModal');
-                if (modal.style.display === 'flex') {
+                if (modal.classList.contains('active')) {
                     document.getElementById('templateName').value = '';
                     document.getElementById('templateDesc').value = '';
                     document.getElementById('templateCategory').value = '';

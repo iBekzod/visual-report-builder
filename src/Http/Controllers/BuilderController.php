@@ -187,6 +187,7 @@ class BuilderController extends Controller
                     $validated['column_dimensions'] ?? []
                 ),
                 'metrics' => $validated['metrics'],
+                'filters' => [], // Required JSON field - store filter definitions here
                 'default_view' => $validated['default_view'] ?? ['type' => 'table'],
                 'chart_config' => [],
             ]);
@@ -212,6 +213,12 @@ class BuilderController extends Controller
                 'template_id' => $template->id,
                 'template' => $template,
             ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

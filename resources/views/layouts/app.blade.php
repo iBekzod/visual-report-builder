@@ -571,7 +571,8 @@
         }
 
         /* Modal */
-        .modal-overlay {
+        .modal-overlay,
+        .modal-backdrop {
             position: fixed;
             inset: 0;
             background: rgba(15, 23, 42, 0.5);
@@ -583,7 +584,8 @@
             padding: 1rem;
         }
 
-        .modal-overlay.active {
+        .modal-overlay.active,
+        .modal-backdrop.active {
             display: flex;
         }
 
