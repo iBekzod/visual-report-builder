@@ -39,10 +39,9 @@ return [
     ],
 
     // Model auto-discovery and configuration
-    // DISABLED BY DEFAULT - Enable only if your project has these models
     'models' => [
-        // Auto-discovery disabled by default - explicitly enable if needed
-        'auto_discover' => env('VISUAL_REPORT_AUTO_DISCOVER', false),
+        // Auto-discovery enabled by default - scans app/Models for Eloquent models
+        'auto_discover' => env('VISUAL_REPORT_AUTO_DISCOVER', true),
         'namespace' => env('VISUAL_REPORT_MODEL_NAMESPACE', 'App\\Models'),
         'path' => env('VISUAL_REPORT_MODEL_PATH', app_path('Models')),
 
