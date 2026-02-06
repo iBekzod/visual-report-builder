@@ -1,163 +1,294 @@
 @extends('visual-report-builder::layouts.app')
 
-@section('title', 'Report Dashboard')
+@section('title', 'Dashboard - Visual Report Builder')
 
 @section('content')
-    <div style="display: grid; grid-template-columns: 280px 1fr 320px; gap: 1rem; height: calc(100vh - 100px);">
-        <!-- LEFT SIDEBAR: Templates -->
-        <div style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column;">
-            <div style="padding: 1.5rem 1rem; border-bottom: 1px solid #ddd;">
-                <h2 style="font-size: 1.1rem; margin: 0 0 1rem 0;">📊 Report Templates</h2>
-                <input type="text" id="templateSearch" placeholder="Search templates..."
-                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-            </div>
+    <!-- Page Header -->
+    <div class="page-header flex justify-between items-center">
+        <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">View and analyze your reports</p>
+        </div>
+        <a href="{{ route('visual-reports.builder') }}" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Create Template
+        </a>
+    </div>
 
-            <div id="categoriesList" style="padding: 0.5rem; flex: 1; overflow-y: auto;">
-                <!-- Templates loaded here -->
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-icon primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 17H7A5 5 0 017 7h2"/>
+                    <path d="M15 7h2a5 5 0 010 10h-2"/>
+                    <path d="M8 12h8"/>
+                </svg>
             </div>
+            <div class="stat-value" id="statTemplates">0</div>
+            <div class="stat-label">Templates</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3v18h18"/>
+                    <path d="M18 17V9"/>
+                    <path d="M13 17V5"/>
+                    <path d="M8 17v-3"/>
+                </svg>
+            </div>
+            <div class="stat-value" id="statReports">0</div>
+            <div class="stat-label">Saved Reports</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+            </div>
+            <div class="stat-value" id="statFavorites">0</div>
+            <div class="stat-label">Favorites</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+            </div>
+            <div class="stat-value" id="statRecent">-</div>
+            <div class="stat-label">Last Executed</div>
+        </div>
+    </div>
 
-            <div style="padding: 1rem; border-top: 1px solid #ddd; display: flex; gap: 0.5rem;">
-                <button onclick="toggleFavorites()" class="btn" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;">⭐ Favorites</button>
-                <button onclick="toggleFavorites(false)" class="btn btn-secondary" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;">All</button>
+    <!-- Main Content Grid -->
+    <div style="display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem;">
+        <!-- Left Sidebar: Templates -->
+        <div class="card" style="height: fit-content; max-height: calc(100vh - 380px); display: flex; flex-direction: column;">
+            <div class="card-header flex justify-between items-center">
+                <h3 class="card-title">Templates</h3>
+                <span class="badge badge-secondary" id="templateCount">0</span>
+            </div>
+            <div style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                <div style="position: relative;">
+                    <svg style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem; color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="templateSearch" placeholder="Search templates..."
+                        class="form-input" style="padding-left: 2.25rem;"
+                        oninput="filterTemplates(this.value)">
+                </div>
+            </div>
+            <div id="templatesList" style="flex: 1; overflow-y: auto; padding: 0.5rem;">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 17H7A5 5 0 017 7h2"/>
+                            <path d="M15 7h2a5 5 0 010 10h-2"/>
+                            <path d="M8 12h8"/>
+                        </svg>
+                    </div>
+                    <p class="text-muted">Loading templates...</p>
+                </div>
             </div>
         </div>
 
-        <!-- CENTER MAIN: Report Display -->
-        <div style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden;">
-            <!-- Top Bar: Template Info & Controls -->
-            <div style="padding: 1.5rem; border-bottom: 1px solid #ddd; background: #f9f9f9;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                    <div style="flex: 1;">
-                        <h1 id="templateName" style="margin: 0 0 0.5rem 0; font-size: 1.3rem;">Select a template</h1>
-                        <p id="templateDesc" style="margin: 0; color: #666; font-size: 0.9rem;"></p>
-                    </div>
-                    <a href="{{ route('visual-reports.builder') }}" class="btn" style="padding: 0.75rem 1.5rem; white-space: nowrap;">➕ Create Template</a>
-                </div>
-
-                <div style="display: grid; grid-template-columns: auto auto auto auto; gap: 1rem; align-items: center;">
+        <!-- Right Content: Report Display -->
+        <div class="card" style="display: flex; flex-direction: column; min-height: calc(100vh - 380px);">
+            <!-- Report Header -->
+            <div class="card-header">
+                <div class="flex justify-between items-center">
                     <div>
-                        <label style="display: block; font-weight: bold; margin-bottom: 0.5rem; font-size: 0.9rem;">View Type:</label>
-                        <select id="viewType" onchange="updateView()"
-                            style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="table">📊 Table</option>
-                            <option value="line">📈 Line Chart</option>
-                            <option value="bar">📊 Bar Chart</option>
-                            <option value="pie">🥧 Pie Chart</option>
-                            <option value="area">📈 Area Chart</option>
-                        </select>
+                        <h3 class="card-title" id="reportTitle">Select a Template</h3>
+                        <p class="text-muted mt-1" id="reportDescription">Choose a template from the sidebar to get started</p>
                     </div>
-                    <button onclick="executeReport()" class="btn" style="padding: 0.75rem 1.5rem; align-self: flex-end;">▶️ Execute</button>
-                    <button onclick="openExportModal()" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; align-self: flex-end;">📥 Export</button>
+                    <div class="flex gap-2" id="reportActions" style="display: none;">
+                        <select id="viewType" class="form-select" style="width: auto;" onchange="updateView()">
+                            <option value="table">Table</option>
+                            <option value="bar">Bar Chart</option>
+                            <option value="line">Line Chart</option>
+                            <option value="pie">Pie Chart</option>
+                        </select>
+                        <button onclick="executeReport()" class="btn btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            Execute
+                        </button>
+                        <button onclick="openExportModal()" class="btn btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Export
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Filters Section -->
-            <div id="filtersSection" style="padding: 1rem; border-bottom: 1px solid #ddd; background: #f9f9f9; display: none; max-height: 150px; overflow-y: auto;">
-                <h3 style="margin: 0 0 1rem 0; font-size: 0.9rem;">🔍 Filters</h3>
-                <div id="filterInputs" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <!-- Filters loaded here -->
+            <!-- Filters Section (hidden by default) -->
+            <div id="filtersSection" style="display: none; padding: 1rem 1.5rem; background: var(--light); border-bottom: 1px solid var(--border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg style="width: 1rem; height: 1rem; color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                    </svg>
+                    <span class="font-medium">Filters</span>
                 </div>
+                <div id="filterInputs" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;"></div>
             </div>
 
             <!-- Report Content -->
-            <div id="reportContent" style="flex: 1; padding: 1.5rem; overflow-y: auto; background: white;">
-                <p style="text-align: center; color: #999;">Select a template from the left sidebar</p>
+            <div id="reportContent" class="card-body" style="flex: 1; overflow: auto;">
+                <div class="empty-state">
+                    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M3 3v18h18"/>
+                        <path d="M18 17V9"/>
+                        <path d="M13 17V5"/>
+                        <path d="M8 17v-3"/>
+                    </svg>
+                    <h3 class="empty-state-title">No Report Selected</h3>
+                    <p class="empty-state-text">Select a template from the sidebar and click Execute to view the report</p>
+                </div>
             </div>
 
-            <!-- Footer: Summary -->
-            <div id="summarySection" style="padding: 1rem; border-top: 1px solid #ddd; background: #f9f9f9; max-height: 100px; overflow-y: auto; display: none;">
-                <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem;">📈 Summary</h4>
+            <!-- Summary Footer -->
+            <div id="summarySection" style="display: none; padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--light);">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg style="width: 1rem; height: 1rem; color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20V10"/>
+                        <path d="M18 20V4"/>
+                        <path d="M6 20v-4"/>
+                    </svg>
+                    <span class="font-medium">Summary</span>
+                </div>
                 <div id="summaryContent"></div>
-            </div>
-        </div>
-
-        <!-- RIGHT SIDEBAR: Saved Reports -->
-        <div style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column;">
-            <div style="padding: 1.5rem 1rem; border-bottom: 1px solid #ddd;">
-                <h2 style="font-size: 1.1rem; margin: 0;">💾 Saved Reports</h2>
-                <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.85rem;" id="savedCount">0 reports</p>
-            </div>
-
-            <div id="savedReportsList" style="flex: 1; padding: 0.5rem; overflow-y: auto;">
-                <!-- Saved reports loaded here -->
-            </div>
-
-            <div style="padding: 1rem; border-top: 1px solid #ddd; display: flex; gap: 0.5rem;">
-                <button onclick="saveCurrent()" class="btn" style="flex: 1; padding: 0.5rem; font-size: 0.9rem; display: none;" id="saveBtn">💾 Save</button>
-                <button onclick="clearAll()" class="btn btn-danger" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;">🗑️ Clear</button>
             </div>
         </div>
     </div>
 
     <!-- Export Modal -->
-    <div id="exportModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px;">
-            <h2>📥 Export Report</h2>
-            <div style="margin: 1.5rem 0;">
-                <label style="display: block; margin-bottom: 0.5rem;"><strong>Format:</strong></label>
-                <select id="exportFormat" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                    <option value="csv">CSV (Spreadsheet)</option>
-                    <option value="excel">Excel (XLSX)</option>
-                    <option value="pdf">PDF (Professional)</option>
-                    <option value="json">JSON (Data)</option>
-                </select>
+    <div id="exportModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Export Report</h3>
+                <button onclick="closeExportModal()" class="modal-close">
+                    <svg style="width: 1.25rem; height: 1.25rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
-            <div style="display: flex; gap: 1rem;">
-                <button onclick="performExport()" class="btn" style="flex: 1;">📥 Export</button>
-                <button onclick="closeExportModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Export Format</label>
+                    <select id="exportFormat" class="form-select">
+                        <option value="csv">CSV (Spreadsheet)</option>
+                        <option value="excel">Excel (XLSX)</option>
+                        <option value="pdf">PDF (Document)</option>
+                        <option value="json">JSON (Data)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeExportModal()" class="btn btn-secondary">Cancel</button>
+                <button onclick="performExport()" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Save Modal -->
-    <div id="saveModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px;">
-            <h2>💾 Save Report</h2>
-            <div style="margin: 1.5rem 0;">
-                <label style="display: block; margin-bottom: 0.5rem;"><strong>Report Name:</strong></label>
-                <input type="text" id="reportName" placeholder="Enter report name"
-                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
-                <label style="display: block; margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Description:</strong></label>
-                <textarea id="reportDesc" placeholder="Optional description" rows="3"
-                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+    <div id="saveModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Save Report</h3>
+                <button onclick="closeSaveModal()" class="modal-close">
+                    <svg style="width: 1.25rem; height: 1.25rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
-            <div style="display: flex; gap: 1rem;">
-                <button onclick="confirmSave()" class="btn" style="flex: 1;">💾 Save</button>
-                <button onclick="closeSaveModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Report Name</label>
+                    <input type="text" id="reportName" class="form-input" placeholder="Enter a name for this report">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description (optional)</label>
+                    <textarea id="reportDesc" class="form-textarea" rows="3" placeholder="Add a description..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeSaveModal()" class="btn btn-secondary">Cancel</button>
+                <button onclick="confirmSave()" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Report
+                </button>
             </div>
         </div>
     </div>
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <script>
         let currentTemplate = null;
         let currentData = null;
         let currentFilters = {};
-        let currentViewType = 'table';
         let chartInstance = null;
+        let allTemplates = [];
 
-        // Load templates on page load
-        document.addEventListener('DOMContentLoaded', loadTemplates);
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDashboardData();
+        });
 
-        async function loadTemplates() {
+        async function loadDashboardData() {
             try {
                 const response = await window.apiClient.get('/api/visual-reports/templates');
-                renderTemplates(response);
+                allTemplates = response.templates || [];
+
+                // Update stats
+                document.getElementById('statTemplates').textContent = allTemplates.length;
+                document.getElementById('templateCount').textContent = allTemplates.length;
+
+                renderTemplates(allTemplates);
             } catch (error) {
-                console.error('Error loading templates:', error);
+                console.error('Error loading data:', error);
             }
         }
 
-        function renderTemplates(data) {
-            const templates = data.templates || [];
-            const categories = data.categories || [];
-            const container = document.getElementById('categoriesList');
+        function renderTemplates(templates) {
+            const container = document.getElementById('templatesList');
 
-            let html = '';
+            if (templates.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 17H7A5 5 0 017 7h2"/>
+                            <path d="M15 7h2a5 5 0 010 10h-2"/>
+                            <path d="M8 12h8"/>
+                        </svg>
+                        <h3 class="empty-state-title">No Templates</h3>
+                        <p class="empty-state-text">Create your first template to get started</p>
+                        <a href="{{ route('visual-reports.builder') }}" class="btn btn-primary btn-sm">Create Template</a>
+                    </div>
+                `;
+                return;
+            }
 
             // Group by category
             const grouped = {};
@@ -167,27 +298,59 @@
                 grouped[cat].push(t);
             });
 
-            // Render categories
+            let html = '';
             Object.entries(grouped).forEach(([category, temps]) => {
-                html += `<div style="margin-bottom: 1rem;">`;
-                html += `<div style="padding: 0.5rem 1rem; background: #f0f0f0; font-weight: bold; font-size: 0.85rem; border-radius: 4px; cursor: pointer; user-select: none;"
-                    onclick="toggleCategory(this)">${category} (${temps.length})</div>`;
-                html += `<div style="padding: 0.5rem 0; display: block;">`;
+                html += `
+                    <div style="margin-bottom: 0.5rem;">
+                        <button onclick="toggleCategory(this)" class="btn btn-ghost" style="width: 100%; justify-content: space-between; padding: 0.5rem 0.75rem;">
+                            <span class="font-medium">${category}</span>
+                            <span class="badge badge-secondary">${temps.length}</span>
+                        </button>
+                        <div class="category-items" style="padding-left: 0.5rem;">
+                `;
 
                 temps.forEach(t => {
-                    html += `<div onclick="selectTemplate(${t.id})"
-                        style="padding: 0.75rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; user-select: none;"
-                        onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'"
-                        class="template-item" data-id="${t.id}">
-                        <div style="font-weight: 500; font-size: 0.9rem;">${t.icon || '📊'} ${t.name}</div>
-                        <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">${t.description || ''}</div>
-                    </div>`;
+                    html += `
+                        <div onclick="selectTemplate(${t.id})" class="template-item" data-id="${t.id}"
+                            style="padding: 0.75rem; border-radius: var(--radius); cursor: pointer; margin: 0.25rem 0; transition: all 0.15s ease;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="font-size: 1.25rem;">${t.icon || '📊'}</span>
+                                <div>
+                                    <div class="font-medium" style="color: var(--dark);">${t.name}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">${t.description ? t.description.substring(0, 50) + '...' : 'No description'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 });
 
                 html += `</div></div>`;
             });
 
             container.innerHTML = html;
+
+            // Add hover effects
+            document.querySelectorAll('.template-item').forEach(item => {
+                item.addEventListener('mouseenter', () => item.style.background = 'var(--light)');
+                item.addEventListener('mouseleave', () => {
+                    if (!item.classList.contains('active')) {
+                        item.style.background = 'transparent';
+                    }
+                });
+            });
+        }
+
+        function filterTemplates(query) {
+            const filtered = allTemplates.filter(t =>
+                t.name.toLowerCase().includes(query.toLowerCase()) ||
+                (t.description && t.description.toLowerCase().includes(query.toLowerCase()))
+            );
+            renderTemplates(filtered);
+        }
+
+        function toggleCategory(btn) {
+            const items = btn.nextElementSibling;
+            items.style.display = items.style.display === 'none' ? 'block' : 'none';
         }
 
         async function selectTemplate(id) {
@@ -197,22 +360,35 @@
                 currentFilters = {};
 
                 // Update UI
-                document.getElementById('templateName').textContent = response.name;
-                document.getElementById('templateDesc').textContent = response.description || '';
-                document.getElementById('saveBtn').style.display = 'block';
+                document.getElementById('reportTitle').textContent = response.name;
+                document.getElementById('reportDescription').textContent = response.description || 'No description';
+                document.getElementById('reportActions').style.display = 'flex';
+                document.getElementById('viewType').value = response.default_view?.type || 'table';
 
-                // Render filters
+                // Highlight selected template
+                document.querySelectorAll('.template-item').forEach(item => {
+                    item.classList.remove('active');
+                    item.style.background = 'transparent';
+                });
+                const selectedItem = document.querySelector(`.template-item[data-id="${id}"]`);
+                if (selectedItem) {
+                    selectedItem.classList.add('active');
+                    selectedItem.style.background = '#fef2f2';
+                }
+
+                // Render filters if any
                 renderFilters(response.filters);
 
-                // Update view types
-                const viewSelect = document.getElementById('viewType');
-                viewSelect.value = response.default_view?.type || 'table';
-
-                // Load saved reports
-                loadSavedReports(id);
-
-                // Clear current data
-                document.getElementById('reportContent').innerHTML = '<p style="text-align: center; color: #999;">Click ▶️ Execute to generate the report</p>';
+                // Show placeholder
+                document.getElementById('reportContent').innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <h3 class="empty-state-title">Ready to Execute</h3>
+                        <p class="empty-state-text">Click the Execute button to generate the report</p>
+                    </div>
+                `;
             } catch (error) {
                 console.error('Error selecting template:', error);
             }
@@ -231,29 +407,20 @@
             let html = '';
 
             filters.forEach(f => {
-                html += `<div>
-                    <label style="display: block; margin-bottom: 0.25rem; font-size: 0.85rem; font-weight: 500;">${f.label}${f.is_required ? ' *' : ''}</label>`;
+                html += `<div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">${f.label}${f.is_required ? ' *' : ''}</label>`;
 
-                if (f.type === 'text') {
-                    html += `<input type="text" data-column="${f.column}" value="${f.default_value || ''}"
-                        onchange="updateFilter('${f.column}', this.value)"
-                        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">`;
-                } else if (f.type === 'select' && f.options) {
-                    html += `<select data-column="${f.column}" onchange="updateFilter('${f.column}', this.value)"
-                        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="">-- Select --</option>`;
+                if (f.type === 'select' && f.options) {
+                    html += `<select class="form-select" data-column="${f.column}" onchange="updateFilter('${f.column}', this.value)">
+                        <option value="">Select...</option>`;
                     f.options.forEach(o => {
                         html += `<option value="${o.value}">${o.label}</option>`;
                     });
                     html += `</select>`;
                 } else if (f.type === 'date') {
-                    html += `<input type="date" data-column="${f.column}" value="${f.default_value || ''}"
-                        onchange="updateFilter('${f.column}', this.value)"
-                        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">`;
-                } else if (f.type === 'number') {
-                    html += `<input type="number" data-column="${f.column}" value="${f.default_value || ''}"
-                        onchange="updateFilter('${f.column}', this.value)"
-                        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">`;
+                    html += `<input type="date" class="form-input" data-column="${f.column}" onchange="updateFilter('${f.column}', this.value)">`;
+                } else {
+                    html += `<input type="text" class="form-input" data-column="${f.column}" placeholder="Enter value..." onchange="updateFilter('${f.column}', this.value)">`;
                 }
 
                 html += `</div>`;
@@ -272,26 +439,48 @@
                 return;
             }
 
-            try {
-                document.getElementById('reportContent').innerHTML = '<p style="text-align: center; color: #999;">⏳ Loading...</p>';
+            const container = document.getElementById('reportContent');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div style="width: 2rem; height: 2rem; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                    <p class="text-muted">Loading report data...</p>
+                </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            `;
 
+            try {
                 const response = await window.apiClient.post(
                     `/api/visual-reports/templates/${currentTemplate.id}/execute`,
-                    {
-                        filters: currentFilters,
-                        view_type: document.getElementById('viewType').value,
-                    }
+                    { filters: currentFilters, view_type: document.getElementById('viewType').value }
                 );
 
                 if (response.success) {
                     currentData = response;
-                    currentViewType = document.getElementById('viewType').value;
                     updateView();
+                    document.getElementById('statRecent').textContent = 'Just now';
                 } else {
-                    document.getElementById('reportContent').innerHTML = `<p style="color: red;">❌ ${response.message}</p>`;
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 8v4"/>
+                                <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                            </svg>
+                            <span>${response.message}</span>
+                        </div>
+                    `;
                 }
             } catch (error) {
-                document.getElementById('reportContent').innerHTML = `<p style="color: red;">❌ ${error.message}</p>`;
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 8v4"/>
+                            <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                        </svg>
+                        <span>Error executing report: ${error.message}</span>
+                    </div>
+                `;
             }
         }
 
@@ -299,7 +488,6 @@
             if (!currentData) return;
 
             const viewType = document.getElementById('viewType').value;
-            const container = document.getElementById('reportContent');
 
             if (viewType === 'table') {
                 renderTable(currentData.data.rows);
@@ -309,144 +497,158 @@
 
             // Show summary
             document.getElementById('summarySection').style.display = 'block';
-            renderSummary(currentData.data.summary);
+            renderSummary(currentData.data.summary, currentData.metadata);
         }
 
         function renderTable(rows) {
+            const container = document.getElementById('reportContent');
+
             if (!rows || rows.length === 0) {
-                document.getElementById('reportContent').innerHTML = '<p style="text-align: center; color: #999;">No data</p>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M8 12h8"/>
+                        </svg>
+                        <h3 class="empty-state-title">No Data</h3>
+                        <p class="empty-state-text">No records found for the selected criteria</p>
+                    </div>
+                `;
                 return;
             }
 
-            let html = '<table class="table" style="font-size: 0.9rem;"><thead><tr>';
+            let html = '<div class="table-container"><table class="table"><thead><tr>';
             Object.keys(rows[0]).forEach(col => {
-                html += `<th>${col}</th>`;
+                const label = col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                html += `<th>${label}</th>`;
             });
             html += '</tr></thead><tbody>';
 
             rows.forEach(row => {
                 html += '<tr>';
                 Object.values(row).forEach(val => {
-                    html += `<td>${val}</td>`;
+                    const displayVal = typeof val === 'boolean'
+                        ? (val ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-secondary">No</span>')
+                        : (val ?? '-');
+                    html += `<td>${displayVal}</td>`;
                 });
                 html += '</tr>';
             });
 
-            html += '</tbody></table>';
-            document.getElementById('reportContent').innerHTML = html;
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
         }
 
         function renderChart(type, data) {
+            const container = document.getElementById('reportContent');
             const rows = data.data.rows;
+
             if (!rows || rows.length === 0) return;
 
-            const labels = rows.map((r, i) => Object.values(r)[0]);
+            container.innerHTML = '<canvas id="reportChart" style="max-height: 400px;"></canvas>';
+            const ctx = document.getElementById('reportChart').getContext('2d');
+
+            const labels = rows.map(r => Object.values(r)[0]);
             const datasets = [];
+            const colors = ['#f53003', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
 
             data.data.metrics.forEach((metric, i) => {
-                const values = rows.map(r => r[metric.alias] || 0);
+                const alias = metric.alias || `${metric.column}_${metric.aggregate}`;
+                const values = rows.map(r => parseFloat(r[alias]) || 0);
                 datasets.push({
                     label: metric.label,
                     data: values,
-                    borderColor: `hsl(${i * 60}, 70%, 50%)`,
-                    backgroundColor: `hsla(${i * 60}, 70%, 50%, 0.1)`,
+                    borderColor: colors[i % colors.length],
+                    backgroundColor: type === 'pie'
+                        ? colors.map(c => c + '99')
+                        : colors[i % colors.length] + '20',
+                    borderWidth: 2,
                     tension: 0.4,
                 });
             });
 
-            const ctx = document.createElement('canvas');
-            document.getElementById('reportContent').innerHTML = '';
-            document.getElementById('reportContent').appendChild(ctx);
-
             if (chartInstance) chartInstance.destroy();
 
-            const chartType = {
-                'line': 'line',
-                'bar': 'bar',
-                'pie': 'pie',
-                'area': 'line',
-                'scatter': 'scatter'
-            }[type] || 'line';
-
             chartInstance = new Chart(ctx, {
-                type: chartType,
+                type: type === 'pie' ? 'pie' : type,
                 data: { labels, datasets },
-                options: { responsive: true, maintainAspectRatio: true }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: type !== 'pie' ? {
+                        y: { beginAtZero: true }
+                    } : {}
+                }
             });
         }
 
-        function renderSummary(summary) {
-            if (!summary) return;
+        function renderSummary(summary, metadata) {
+            const container = document.getElementById('summaryContent');
 
-            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">';
+            let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">`;
 
-            Object.entries(summary).forEach(([key, stats]) => {
-                html += `<div style="background: #f9f9f9; padding: 0.75rem; border-radius: 4px; font-size: 0.85rem;">
-                    <div style="font-weight: bold;">${key}</div>
-                    <div>Sum: ${Math.round(stats.sum)}</div>
-                    <div>Avg: ${Math.round(stats.avg)}</div>
-                    <div>Count: ${stats.count}</div>
-                </div>`;
-            });
+            html += `
+                <div style="text-align: center; padding: 0.75rem; background: white; border-radius: var(--radius); border: 1px solid var(--border);">
+                    <div class="font-bold text-primary" style="font-size: 1.25rem;">${metadata?.record_count || 0}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">Records</div>
+                </div>
+                <div style="text-align: center; padding: 0.75rem; background: white; border-radius: var(--radius); border: 1px solid var(--border);">
+                    <div class="font-bold" style="font-size: 1.25rem; color: var(--success);">${metadata?.execution_time_ms || 0}ms</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">Exec Time</div>
+                </div>
+            `;
+
+            if (summary) {
+                Object.entries(summary).forEach(([key, stats]) => {
+                    if (stats.count > 0) {
+                        html += `
+                            <div style="text-align: center; padding: 0.75rem; background: white; border-radius: var(--radius); border: 1px solid var(--border);">
+                                <div class="font-bold" style="font-size: 1.25rem;">${Number(stats.sum).toLocaleString()}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Total ${key.replace(/_/g, ' ')}</div>
+                            </div>
+                        `;
+                    }
+                });
+            }
 
             html += '</div>';
-            document.getElementById('summaryContent').innerHTML = html;
-        }
-
-        async function loadSavedReports(templateId) {
-            try {
-                const response = await window.apiClient.get(`/api/visual-reports/templates/${templateId}/saved`);
-                renderSavedReports(response);
-            } catch (error) {
-                console.error('Error loading saved reports:', error);
-            }
-        }
-
-        function renderSavedReports(reports) {
-            const container = document.getElementById('savedReportsList');
-            document.getElementById('savedCount').textContent = `${reports.length} reports`;
-
-            if (reports.length === 0) {
-                container.innerHTML = '<p style="padding: 1rem; text-align: center; color: #999; font-size: 0.9rem;">No saved reports</p>';
-                return;
-            }
-
-            let html = '';
-            reports.forEach(r => {
-                html += `<div onclick="loadResult(${r.id})"
-                    style="padding: 0.75rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; border-bottom: 1px solid #eee; user-select: none;"
-                    onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
-                    <div style="font-weight: 500; font-size: 0.9rem;">${r.name}</div>
-                    <div style="font-size: 0.75rem; color: #666; margin-top: 0.25rem;">${r.created_at}</div>
-                    <div style="font-size: 0.75rem; color: #999; margin-top: 0.25rem;">📊 ${r.view_type}</div>
-                </div>`;
-            });
-
             container.innerHTML = html;
         }
 
-        async function loadResult(id) {
-            try {
-                const response = await window.apiClient.get(`/api/visual-reports/results/${id}`);
-                currentData = { data: { rows: response.data, metrics: [], summary: {} }, metadata: response };
-                currentFilters = response.applied_filters;
-                document.getElementById('viewType').value = response.view_type;
-                updateView();
-            } catch (error) {
-                alert('Error loading report');
+        function openExportModal() {
+            if (!currentData) {
+                alert('Please execute a report first');
+                return;
             }
+            document.getElementById('exportModal').classList.add('active');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('active');
+        }
+
+        function performExport() {
+            const format = document.getElementById('exportFormat').value;
+            alert(`Exporting as ${format.toUpperCase()}...`);
+            closeExportModal();
         }
 
         function saveCurrent() {
-            document.getElementById('saveModal').style.display = 'flex';
+            if (!currentData) {
+                alert('Please execute a report first');
+                return;
+            }
+            document.getElementById('saveModal').classList.add('active');
+        }
+
+        function closeSaveModal() {
+            document.getElementById('saveModal').classList.remove('active');
         }
 
         async function confirmSave() {
-            if (!currentData || !currentTemplate) {
-                alert('No report to save');
-                return;
-            }
-
             const name = document.getElementById('reportName').value;
             if (!name) {
                 alert('Please enter a report name');
@@ -460,57 +662,15 @@
                         name,
                         description: document.getElementById('reportDesc').value,
                         applied_filters: currentFilters,
-                        view_type: currentViewType,
+                        view_type: document.getElementById('viewType').value,
                         view_config: {},
                         data: currentData.data.rows,
                     }
                 );
-
-                alert('Report saved successfully');
+                alert('Report saved successfully!');
                 closeSaveModal();
-                loadSavedReports(currentTemplate.id);
             } catch (error) {
                 alert('Error saving report');
-            }
-        }
-
-        function closeSaveModal() {
-            document.getElementById('saveModal').style.display = 'none';
-            document.getElementById('reportName').value = '';
-            document.getElementById('reportDesc').value = '';
-        }
-
-        function openExportModal() {
-            if (!currentData) {
-                alert('Please execute a report first');
-                return;
-            }
-            document.getElementById('exportModal').style.display = 'flex';
-        }
-
-        function closeExportModal() {
-            document.getElementById('exportModal').style.display = 'none';
-        }
-
-        async function performExport() {
-            const format = document.getElementById('exportFormat').value;
-            // TODO: Implement export
-            alert('Export in ' + format);
-            closeExportModal();
-        }
-
-        function toggleCategory(element) {
-            const next = element.nextElementSibling;
-            next.style.display = next.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function toggleFavorites(show = true) {
-            // TODO: Implement favorites filter
-        }
-
-        function clearAll() {
-            if (confirm('Clear all reports?')) {
-                document.getElementById('savedReportsList').innerHTML = '';
             }
         }
     </script>
