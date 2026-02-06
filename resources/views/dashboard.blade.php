@@ -630,10 +630,84 @@
             document.getElementById('exportModal').classList.remove('active');
         }
 
-        function performExport() {
+        async function performExport() {
             const format = document.getElementById('exportFormat').value;
-            alert(`Exporting as ${format.toUpperCase()}...`);
-            closeExportModal();
+
+            if (!currentTemplate || !currentData) {
+                alert('Please execute a report first');
+                closeExportModal();
+                return;
+            }
+
+            try {
+                // Show loading state
+                const exportBtn = document.querySelector('#exportModal .btn-primary');
+                const originalText = exportBtn.innerHTML;
+                exportBtn.innerHTML = '<svg class="animate-spin" style="width:1rem;height:1rem;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Exporting...';
+                exportBtn.disabled = true;
+
+                // Build the export URL
+                const exportUrl = `/api/visual-reports/templates/${currentTemplate.id}/export/${format}`;
+
+                // Make the request with data
+                const response = await fetch(exportUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': format === 'json' ? 'application/json' : '*/*',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: JSON.stringify({
+                        data: currentData.data.rows,
+                        filters: currentFilters
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+
+                // Get the blob and create download link
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+
+                // Get filename from Content-Disposition header or generate one
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = `${currentTemplate.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}`;
+
+                if (disposition && disposition.includes('filename=')) {
+                    const matches = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (matches && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                } else {
+                    // Add extension based on format
+                    const extensions = { csv: 'csv', json: 'json', excel: 'xlsx', pdf: 'html' };
+                    filename += '.' + (extensions[format] || 'csv');
+                }
+
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Reset button and close modal
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+                closeExportModal();
+
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting report: ' + error.message);
+
+                // Reset button state
+                const exportBtn = document.querySelector('#exportModal .btn-primary');
+                exportBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export';
+                exportBtn.disabled = false;
+            }
         }
 
         function saveCurrent() {

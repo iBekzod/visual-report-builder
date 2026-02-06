@@ -31,6 +31,9 @@ Route::middleware($apiMiddleware)->prefix('api/visual-reports')->name('visual-re
     // Execute template with filters
     Route::post('templates/{template}/execute', [TemplateController::class, 'execute'])->name('templates.execute');
 
+    // Export template data directly (without saving)
+    Route::post('templates/{template}/export/{format}', [TemplateController::class, 'exportDirect'])->name('templates.export');
+
     // Saved report results
     Route::post('templates/{template}/save', [TemplateController::class, 'saveResult'])->name('results.store');
     Route::get('templates/{template}/saved', [TemplateController::class, 'savedReports'])->name('results.saved');

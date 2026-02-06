@@ -275,7 +275,7 @@ class TemplateController extends Controller
     }
 
     /**
-     * Export report
+     * Export saved report
      */
     public function export(Request $request, ReportResult $result)
     {
@@ -292,6 +292,176 @@ class TemplateController extends Controller
         $exporter = app('visual-report-builder')->getExporterFactory()->create($format);
 
         return $exporter->exportAsFile($result->data, "{$result->name}.{$exporter->getExtension()}");
+    }
+
+    /**
+     * Export template data directly (without saving first)
+     */
+    public function exportDirect(Request $request, ReportTemplate $template, string $format)
+    {
+        // Authorization: User can export if template is public OR (auth is enabled AND user created it)
+        $authEnabled = config('visual-report-builder.auth.enabled', false);
+        if (!$template->is_public && ($authEnabled && $template->created_by !== auth()->id())) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            // Get data from request or execute template
+            $data = $request->input('data');
+
+            if (empty($data)) {
+                // Execute template to get fresh data
+                $appliedFilters = $request->input('filters', []);
+                $result = $this->executor->execute($template, $appliedFilters);
+                $data = $result['data'];
+            }
+
+            // Validate format
+            $validFormats = ['csv', 'json', 'excel', 'pdf'];
+            if (!in_array($format, $validFormats)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid export format. Supported: ' . implode(', ', $validFormats)
+                ], 400);
+            }
+
+            // Generate filename
+            $filename = str_replace(' ', '_', $template->name) . '_' . date('Y-m-d_His');
+
+            // Handle different export formats
+            switch ($format) {
+                case 'csv':
+                    return $this->exportAsCsv($data, $filename);
+                case 'json':
+                    return $this->exportAsJson($data, $filename);
+                case 'excel':
+                    return $this->exportAsExcel($data, $filename);
+                case 'pdf':
+                    return $this->exportAsPdf($data, $filename, $template);
+                default:
+                    return $this->exportAsCsv($data, $filename);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Export data as CSV
+     */
+    protected function exportAsCsv(array $data, string $filename)
+    {
+        if (empty($data)) {
+            return response()->json(['success' => false, 'message' => 'No data to export'], 400);
+        }
+
+        $headers = array_keys($data[0]);
+
+        $callback = function() use ($data, $headers) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $headers);
+
+            foreach ($data as $row) {
+                fputcsv($file, array_values($row));
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+        ]);
+    }
+
+    /**
+     * Export data as JSON
+     */
+    protected function exportAsJson(array $data, string $filename)
+    {
+        return response()->json($data)
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '.json"');
+    }
+
+    /**
+     * Export data as Excel (simple CSV with excel-friendly encoding)
+     */
+    protected function exportAsExcel(array $data, string $filename)
+    {
+        if (empty($data)) {
+            return response()->json(['success' => false, 'message' => 'No data to export'], 400);
+        }
+
+        $headers = array_keys($data[0]);
+
+        $callback = function() use ($data, $headers) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for Excel UTF-8 compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($file, $headers);
+
+            foreach ($data as $row) {
+                fputcsv($file, array_values($row));
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.xlsx"',
+        ]);
+    }
+
+    /**
+     * Export data as PDF (simple HTML table)
+     */
+    protected function exportAsPdf(array $data, string $filename, ReportTemplate $template)
+    {
+        if (empty($data)) {
+            return response()->json(['success' => false, 'message' => 'No data to export'], 400);
+        }
+
+        $headers = array_keys($data[0]);
+
+        // Generate HTML
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' . $template->name . '</title>';
+        $html .= '<style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;}';
+        $html .= 'h1{font-size:18px;margin-bottom:20px;}';
+        $html .= 'table{border-collapse:collapse;width:100%;}';
+        $html .= 'th,td{border:1px solid #ddd;padding:8px;text-align:left;}';
+        $html .= 'th{background-color:#f2f2f2;font-weight:bold;}';
+        $html .= 'tr:nth-child(even){background-color:#f9f9f9;}</style></head><body>';
+        $html .= '<h1>' . htmlspecialchars($template->name) . '</h1>';
+        $html .= '<p>Generated: ' . date('Y-m-d H:i:s') . '</p>';
+        $html .= '<table><thead><tr>';
+
+        foreach ($headers as $header) {
+            $html .= '<th>' . htmlspecialchars(ucwords(str_replace('_', ' ', $header))) . '</th>';
+        }
+
+        $html .= '</tr></thead><tbody>';
+
+        foreach ($data as $row) {
+            $html .= '<tr>';
+            foreach ($row as $value) {
+                $html .= '<td>' . htmlspecialchars($value ?? '') . '</td>';
+            }
+            $html .= '</tr>';
+        }
+
+        $html .= '</tbody></table></body></html>';
+
+        // Return as downloadable HTML (browsers can print to PDF)
+        return response($html, 200, [
+            'Content-Type' => 'text/html',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.html"',
+        ]);
     }
 
     /**
