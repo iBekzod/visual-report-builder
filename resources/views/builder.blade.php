@@ -707,10 +707,11 @@
         `;
 
         try {
-            // Load dimensions and metrics
+            // Load dimensions and metrics (URL encode the model class name)
+            const encodedModel = encodeURIComponent(currentModel);
             const [dimensions, metrics] = await Promise.all([
-                window.apiClient.get(`/api/visual-reports/models/${currentModel}/dimensions`),
-                window.apiClient.get(`/api/visual-reports/models/${currentModel}/metrics`)
+                window.apiClient.get(`/api/visual-reports/models/${encodedModel}/dimensions`),
+                window.apiClient.get(`/api/visual-reports/models/${encodedModel}/metrics`)
             ]);
 
             availableDimensions = dimensions || [];
@@ -722,7 +723,7 @@
 
             // Load relationships
             try {
-                const relationshipsResponse = await window.apiClient.get(`/api/visual-reports/models/${currentModel}/relationships`);
+                const relationshipsResponse = await window.apiClient.get(`/api/visual-reports/models/${encodedModel}/relationships`);
                 loadRelationships(relationshipsResponse.relationships || relationshipsResponse || []);
             } catch (err) {
                 console.log('No relationships found for this model');
@@ -851,9 +852,10 @@
                     </div>
                 `;
 
+                const encodedRelatedModel = encodeURIComponent(rel.related_model);
                 const [dimensions, metrics] = await Promise.all([
-                    window.apiClient.get(`/api/visual-reports/models/${rel.related_model}/dimensions`),
-                    window.apiClient.get(`/api/visual-reports/models/${rel.related_model}/metrics`)
+                    window.apiClient.get(`/api/visual-reports/models/${encodedRelatedModel}/dimensions`),
+                    window.apiClient.get(`/api/visual-reports/models/${encodedRelatedModel}/metrics`)
                 ]);
 
                 // Add relationship prefix to related model's fields
