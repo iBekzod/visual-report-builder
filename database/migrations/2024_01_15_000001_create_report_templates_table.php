@@ -21,9 +21,9 @@ return new class extends Migration
                 // Template Configuration
                 $table->json('dimensions'); // Available dimensions
                 $table->json('metrics'); // Available metrics
-                $table->json('filters'); // Filter definitions
+                $table->json('filters')->nullable()->default(null); // Filter definitions (optional)
                 $table->json('default_view'); // Default visualization type (table, line, bar, pie)
-                $table->json('chart_config'); // Chart.js / ApexCharts config
+                $table->json('chart_config')->nullable()->default(null); // Chart.js / ApexCharts config
 
                 // Display Settings
                 $table->string('icon')->nullable();
