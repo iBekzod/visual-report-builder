@@ -57,5 +57,6 @@ Route::middleware($apiMiddleware)->prefix('api/visual-reports')->name('visual-re
     Route::get('models/{model}/metrics', [BuilderController::class, 'metrics'])->name('builder.metrics');
     Route::get('models/{model}/relationships', [BuilderController::class, 'relationships'])->name('builder.relationships');
     Route::post('preview', [BuilderController::class, 'preview'])->name('builder.preview');
+    Route::post('export', [BuilderController::class, 'export'])->name('builder.export');
     Route::post('builder/save-template', [BuilderController::class, 'saveTemplate'])->name('builder.save-template');
 });

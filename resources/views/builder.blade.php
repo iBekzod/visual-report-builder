@@ -2,346 +2,236 @@
 
 @section('title', 'Report Builder')
 
-@section('content')
+@section('styles')
 <style>
-    /* Builder specific styles */
-    .builder-container {
+    .builder-layout {
         display: grid;
-        grid-template-columns: 360px 1fr;
+        grid-template-columns: 340px 1fr;
         gap: 1.5rem;
-        height: calc(100vh - 140px);
+        min-height: calc(100vh - 160px);
     }
 
+    /* Left Panel */
     .config-panel {
         background: white;
-        border-radius: var(--radius);
+        border-radius: var(--radius-lg);
         border: 1px solid var(--border);
-        overflow-y: auto;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
     }
 
-    .config-panel-header {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--border);
-        background: #f8fafc;
+    .panel-header {
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, var(--primary) 0%, #dc2626 100%);
+        color: white;
     }
 
-    .config-panel-header h2 {
-        font-size: 0.875rem;
+    .panel-header h2 {
+        font-size: 1rem;
         font-weight: 600;
-        color: var(--text);
         margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .config-panel-body {
-        padding: 1.5rem;
-        flex: 1;
-        overflow-y: auto;
-    }
-
-    .config-section {
-        margin-bottom: 1.5rem;
-    }
-
-    .config-section:last-child {
-        margin-bottom: 0;
-    }
-
-    .config-label {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin-bottom: 0.5rem;
-        font-size: 0.8125rem;
-        font-weight: 500;
+    }
+
+    .panel-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.25rem;
+    }
+
+    /* Step sections */
+    .config-step {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .config-step:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .step-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        background: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .step-number.completed {
+        background: var(--success);
+    }
+
+    .step-title {
+        font-size: 0.875rem;
+        font-weight: 600;
         color: var(--text);
     }
 
-    .config-label svg {
-        width: 16px;
-        height: 16px;
-        color: var(--secondary);
-    }
-
-    .config-hint {
+    .step-hint {
         font-size: 0.75rem;
         color: var(--secondary);
-        margin-top: 0.375rem;
+        margin-left: 2.25rem;
+        margin-bottom: 0.75rem;
     }
 
-    /* Right panel */
-    .fields-panel {
-        background: white;
-        border-radius: var(--radius);
+    /* Checkbox list for relationships */
+    .checkbox-list {
+        background: var(--light);
         border: 1px solid var(--border);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .fields-panel-header {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--border);
-        background: #f8fafc;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .fields-panel-header h2 {
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: var(--text);
-        margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .fields-panel-body {
-        flex: 1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0;
-        overflow: hidden;
-    }
-
-    .fields-column {
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        border-right: 1px solid var(--border);
-    }
-
-    .fields-column:last-child {
-        border-right: none;
-    }
-
-    .fields-column-header {
-        padding: 0.875rem 1.25rem;
-        background: #fafbfc;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .fields-column-header h3 {
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: var(--text);
-        margin: 0;
-    }
-
-    .fields-column-header .badge {
-        font-size: 0.6875rem;
-        padding: 0.125rem 0.5rem;
-    }
-
-    .fields-list {
-        flex: 1;
+        border-radius: var(--radius);
+        max-height: 160px;
         overflow-y: auto;
-        padding: 0.75rem;
     }
 
-    /* Draggable items */
-    .field-item {
+    .checkbox-item {
         display: flex;
         align-items: center;
         gap: 0.625rem;
         padding: 0.625rem 0.875rem;
-        background: #f8fafc;
-        border: 1px solid var(--border);
-        border-radius: calc(var(--radius) - 2px);
-        margin-bottom: 0.5rem;
-        cursor: grab;
-        transition: all 0.15s ease;
-        font-size: 0.8125rem;
-        color: var(--text);
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.15s;
     }
 
-    .field-item:hover {
+    .checkbox-item:last-child {
+        border-bottom: none;
+    }
+
+    .checkbox-item:hover {
         background: white;
-        border-color: var(--primary);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    .field-item:active {
-        cursor: grabbing;
+    .checkbox-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary);
+        cursor: pointer;
     }
 
-    .field-item.dimension {
-        border-left: 3px solid #3b82f6;
-    }
-
-    .field-item.metric {
-        border-left: 3px solid var(--success);
-    }
-
-    .field-item.related {
-        background: #fef3c7;
-    }
-
-    .field-item svg {
-        width: 14px;
-        height: 14px;
-        color: var(--secondary);
-        flex-shrink: 0;
-    }
-
-    .field-item .field-name {
+    .checkbox-item label {
         flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        cursor: pointer;
+        font-size: 0.8125rem;
     }
 
-    .field-item .field-table {
-        font-size: 0.6875rem;
-        color: #6366f1;
-        background: #eef2ff;
+    .checkbox-item .item-badge {
+        font-size: 0.625rem;
         padding: 0.125rem 0.375rem;
         border-radius: 3px;
+        background: #e0e7ff;
+        color: #4f46e5;
     }
 
-    .field-item .field-aggregate {
-        font-size: 0.6875rem;
-        color: var(--secondary);
-        background: #f1f5f9;
-        padding: 0.125rem 0.375rem;
-        border-radius: 3px;
-    }
-
-    /* Drop zones */
-    .drop-zone {
-        min-height: 60px;
-        border: 2px dashed #e2e8f0;
-        border-radius: calc(var(--radius) - 2px);
-        padding: 0.5rem;
-        background: #fafbfc;
-        transition: all 0.2s ease;
+    /* Field chips */
+    .field-chips {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
-        align-content: flex-start;
+        min-height: 44px;
+        padding: 0.5rem;
+        background: var(--light);
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
     }
 
-    .drop-zone.row-dims {
-        border-color: #bfdbfe;
-        background: #eff6ff;
-    }
-
-    .drop-zone.col-dims {
-        border-color: #e2e8f0;
-        background: #f8fafc;
-    }
-
-    .drop-zone.metrics-zone {
-        border-color: #bbf7d0;
-        background: #f0fdf4;
-    }
-
-    .drop-zone.filters-zone {
-        border-color: #fde68a;
-        background: #fffbeb;
-    }
-
-    .drop-zone.drag-over {
+    .field-chips.active {
         border-color: var(--primary);
         background: #fef2f2;
+    }
+
+    .field-chips.has-items {
         border-style: solid;
     }
 
-    .drop-zone-empty {
-        width: 100%;
-        text-align: center;
-        padding: 0.75rem;
-        color: var(--secondary);
-        font-size: 0.75rem;
-    }
-
-    .drop-zone-empty svg {
-        width: 20px;
-        height: 20px;
-        margin: 0 auto 0.375rem;
-        opacity: 0.5;
-    }
-
-    /* Tags in drop zones */
-    .zone-tag {
+    .field-chip {
         display: inline-flex;
         align-items: center;
         gap: 0.375rem;
         padding: 0.375rem 0.625rem;
-        border-radius: calc(var(--radius) - 2px);
-        font-size: 0.75rem;
-        font-weight: 500;
         background: white;
         border: 1px solid var(--border);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        border-radius: var(--radius);
+        font-size: 0.8125rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    .zone-tag.dimension-tag {
+    .field-chip.dimension {
         border-left: 3px solid #3b82f6;
     }
 
-    .zone-tag.metric-tag {
+    .field-chip.metric {
         border-left: 3px solid var(--success);
     }
 
-    .zone-tag.filter-tag {
-        border-left: 3px solid #f59e0b;
+    .field-chip .chip-label {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    .zone-tag .tag-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.125rem;
-    }
-
-    .zone-tag .tag-name {
-        font-weight: 500;
-    }
-
-    .zone-tag .tag-detail {
+    .field-chip .chip-table {
         font-size: 0.625rem;
-        color: var(--secondary);
+        color: #6366f1;
+        background: #eef2ff;
+        padding: 0.0625rem 0.25rem;
+        border-radius: 2px;
     }
 
-    .zone-tag select {
+    .field-chip select {
         font-size: 0.6875rem;
         padding: 0.125rem 0.25rem;
         border: 1px solid var(--border);
         border-radius: 3px;
-        background: #f8fafc;
-        cursor: pointer;
+        background: var(--light);
     }
 
-    .zone-tag .remove-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    .field-chip .remove-chip {
         width: 16px;
         height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border: none;
         background: transparent;
         color: var(--secondary);
         cursor: pointer;
         border-radius: 3px;
         padding: 0;
-        margin-left: 0.25rem;
-        transition: all 0.15s ease;
     }
 
-    .zone-tag .remove-btn:hover {
+    .field-chip .remove-chip:hover {
         background: #fee2e2;
         color: #ef4444;
     }
 
-    /* Filter item */
-    .filter-item {
+    .chips-placeholder {
+        color: var(--secondary);
+        font-size: 0.75rem;
+        padding: 0.375rem;
+    }
+
+    /* Filter row */
+    .filter-row {
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -349,77 +239,126 @@
         background: white;
         border: 1px solid var(--border);
         border-left: 3px solid #f59e0b;
-        border-radius: calc(var(--radius) - 2px);
-        font-size: 0.75rem;
-        width: 100%;
+        border-radius: var(--radius);
+        margin-bottom: 0.5rem;
     }
 
-    .filter-item select,
-    .filter-item input {
+    .filter-row .filter-column {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        min-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .filter-row select,
+    .filter-row input {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
         border: 1px solid var(--border);
         border-radius: 3px;
-        background: #f8fafc;
     }
 
-    .filter-item select {
+    .filter-row select {
+        width: 70px;
+    }
+
+    .filter-row input {
+        flex: 1;
         min-width: 60px;
     }
 
-    .filter-item input {
-        flex: 1;
-        min-width: 80px;
+    /* Available fields panel */
+    .fields-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
     }
 
-    /* Related tables multi-select */
-    .related-tables-list {
-        max-height: 150px;
-        overflow-y: auto;
+    .field-group {
+        background: var(--light);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        background: white;
+        padding: 0.5rem;
     }
 
-    .related-table-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.8125rem;
-        cursor: pointer;
-        transition: background 0.15s ease;
-    }
-
-    .related-table-item:last-child {
-        border-bottom: none;
-    }
-
-    .related-table-item:hover {
-        background: #f8fafc;
-    }
-
-    .related-table-item input[type="checkbox"] {
-        accent-color: var(--primary);
-    }
-
-    .related-table-item .rel-type {
+    .field-group-title {
         font-size: 0.6875rem;
+        font-weight: 600;
         color: var(--secondary);
-        background: #f1f5f9;
-        padding: 0.125rem 0.375rem;
-        border-radius: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.375rem;
+        padding: 0 0.25rem;
     }
 
-    /* Preview section */
-    .preview-section {
+    .field-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+    }
+
+    .field-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.375rem 0.625rem;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .field-button:hover {
+        border-color: var(--primary);
+        background: #fef2f2;
+    }
+
+    .field-button.dimension {
+        border-left: 2px solid #3b82f6;
+    }
+
+    .field-button.metric {
+        border-left: 2px solid var(--success);
+    }
+
+    .field-button .field-table-badge {
+        font-size: 0.5625rem;
+        color: #6366f1;
+        background: #eef2ff;
+        padding: 0.0625rem 0.25rem;
+        border-radius: 2px;
+    }
+
+    /* Actions panel */
+    .panel-actions {
+        padding: 1rem 1.25rem;
+        background: var(--light);
         border-top: 1px solid var(--border);
-        background: #fafbfc;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .panel-actions .btn {
+        flex: 1;
+    }
+
+    /* Right Panel - Preview */
+    .preview-panel {
+        background: white;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     .preview-header {
-        padding: 0.875rem 1.25rem;
+        padding: 1rem 1.25rem;
+        background: var(--light);
         border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
@@ -427,302 +366,451 @@
     }
 
     .preview-header h3 {
-        font-size: 0.8125rem;
+        font-size: 0.9375rem;
         font-weight: 600;
-        color: var(--text);
         margin: 0;
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
 
-    .preview-content {
-        padding: 1rem;
-        max-height: 250px;
-        overflow-y: auto;
-        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-        font-size: 0.75rem;
-        background: #1e293b;
-        color: #e2e8f0;
+    .preview-body {
+        flex: 1;
+        overflow: auto;
+        padding: 0;
     }
 
-    .preview-content pre {
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
+    /* Data table */
+    .data-table-wrapper {
+        overflow-x: auto;
     }
 
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+    }
+
+    .data-table th {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text);
+        background: #f8fafc;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .data-table td {
+        padding: 0.625rem 1rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+    }
+
+    .data-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .data-table .number {
+        text-align: right;
+        font-family: 'SF Mono', monospace;
+    }
+
+    /* Pagination */
+    .pagination-bar {
+        padding: 0.75rem 1.25rem;
+        background: var(--light);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .pagination-info {
+        font-size: 0.8125rem;
+        color: var(--secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .pagination-controls .btn {
+        padding: 0.375rem 0.75rem;
+    }
+
+    .page-size-select {
+        font-size: 0.8125rem;
+        padding: 0.375rem 0.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: white;
+    }
+
+    .page-input {
+        width: 50px;
+        text-align: center;
+        font-size: 0.8125rem;
+        padding: 0.375rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+    }
+
+    /* Empty/loading states */
     .preview-placeholder {
-        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
         text-align: center;
         color: var(--secondary);
-        font-size: 0.8125rem;
     }
 
     .preview-placeholder svg {
-        width: 32px;
-        height: 32px;
-        margin: 0 auto 0.75rem;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 1rem;
         opacity: 0.4;
     }
 
-    /* Action buttons in config panel */
-    .config-actions {
-        padding: 1.25rem 1.5rem;
-        border-top: 1px solid var(--border);
-        background: #f8fafc;
-        display: flex;
-        gap: 0.75rem;
+    .preview-placeholder h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.5rem;
     }
 
-    .config-actions .btn {
-        flex: 1;
-        justify-content: center;
+    .preview-placeholder p {
+        font-size: 0.875rem;
+        max-width: 300px;
     }
 
-    /* Loading states */
-    .loading-text {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--secondary);
-        font-size: 0.8125rem;
-        padding: 1rem;
-    }
-
-    .loading-text svg {
-        animation: spin 1s linear infinite;
+    /* Loading spinner */
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 1rem;
     }
 
     @keyframes spin {
-        from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
 
-    /* Preview success/error states */
-    .preview-success {
-        color: var(--success);
-        font-weight: 500;
-        margin-bottom: 0.75rem;
+    /* Stats row */
+    .stats-row {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem 1.25rem;
+        background: #f0fdf4;
+        border-bottom: 1px solid #bbf7d0;
+    }
+
+    .stat-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-size: 0.8125rem;
     }
 
-    .preview-error {
-        color: #ef4444;
-        padding: 1rem;
-        background: #fef2f2;
-        border-radius: var(--radius);
+    .stat-item .stat-value {
+        font-weight: 600;
+        color: var(--success);
     }
 
-    .preview-warning {
-        color: #f59e0b;
-        padding: 1rem;
-        background: #fffbeb;
-        border-radius: var(--radius);
-    }
-
-    /* Add filter button */
-    .add-filter-btn {
-        width: 100%;
+    /* View tabs for chart/table selection */
+    .view-tabs {
+        display: flex;
+        gap: 0.25rem;
         padding: 0.5rem;
-        border: 2px dashed #fde68a;
-        background: transparent;
-        color: #d97706;
-        font-size: 0.75rem;
-        font-weight: 500;
-        border-radius: calc(var(--radius) - 2px);
-        cursor: pointer;
-        transition: all 0.15s ease;
+        background: var(--light);
+        border-radius: var(--radius);
+    }
+
+    .view-tab {
         display: flex;
         align-items: center;
-        justify-content: center;
         gap: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        border: none;
+        background: transparent;
+        color: var(--secondary);
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: all 0.15s;
     }
 
-    .add-filter-btn:hover {
-        background: #fffbeb;
-        border-color: #f59e0b;
+    .view-tab:hover {
+        background: white;
+        color: var(--text);
     }
 
-    .add-filter-btn svg {
+    .view-tab.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .view-tab svg {
         width: 14px;
         height: 14px;
     }
-</style>
 
-<div class="page-header">
+    /* Chart container */
+    .chart-container {
+        padding: 1.5rem;
+        min-height: 350px;
+    }
+
+    #previewChart {
+        width: 100%;
+        min-height: 320px;
+    }
+
+    /* Summary cards */
+    .summary-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .summary-card {
+        flex: 1;
+        min-width: 120px;
+        padding: 0.75rem;
+        background: white;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .summary-card .card-label {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        color: var(--secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.25rem;
+    }
+
+    .summary-card .card-value {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+</style>
+@endsection
+
+@section('content')
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
         <h1 class="page-title">Report Builder</h1>
         <p style="color: var(--secondary); font-size: 0.875rem; margin-top: 0.25rem;">
-            Create custom reports by combining tables and configuring aggregations
+            Create custom reports by selecting tables and fields
         </p>
     </div>
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="{{ route('visual-reports.dashboard') }}" class="btn btn-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-            Back to Dashboard
-        </a>
-    </div>
+    <a href="{{ route('visual-reports.dashboard') }}" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back to Dashboard
+    </a>
 </div>
 
-<div class="builder-container">
+<div class="builder-layout">
     <!-- Left Panel: Configuration -->
     <div class="config-panel">
-        <div class="config-panel-header">
-            <h2>Configuration</h2>
+        <div class="panel-header">
+            <h2>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                Configuration
+            </h2>
         </div>
 
-        <div class="config-panel-body">
-            <!-- Data Source Selection -->
-            <div class="config-section">
-                <label class="config-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
-                    Primary Table
-                </label>
+        <div class="panel-body">
+            <!-- Step 1: Select Table -->
+            <div class="config-step">
+                <div class="step-header">
+                    <span class="step-number" id="step1">1</span>
+                    <span class="step-title">Select Main Table</span>
+                </div>
+                <p class="step-hint">Choose the primary data source for your report</p>
                 <select id="modelSelect" class="form-select">
-                    <option value="">Select a model...</option>
+                    <option value="">-- Select a table --</option>
                 </select>
             </div>
 
-            <!-- Related Tables (Multi-select) -->
-            <div id="relationshipsContainer" class="config-section" style="display: none;">
-                <label class="config-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    Join Related Tables
-                </label>
-                <div id="relationshipsList" class="related-tables-list">
-                    <!-- Relationships will be loaded here -->
+            <!-- Step 2: Join Related Tables -->
+            <div class="config-step" id="relationshipsStep" style="display: none;">
+                <div class="step-header">
+                    <span class="step-number" id="step2">2</span>
+                    <span class="step-title">Join Related Tables</span>
                 </div>
-                <p class="config-hint">Select tables to join with the primary table</p>
+                <p class="step-hint">Select additional tables to combine data (optional)</p>
+                <div id="relationshipsList" class="checkbox-list">
+                    <div class="chips-placeholder" style="padding: 1rem; text-align: center;">No related tables available</div>
+                </div>
             </div>
 
-            <!-- Row Dimensions -->
-            <div class="config-section">
-                <label class="config-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
-                    Row Dimensions
-                </label>
-                <div id="rowDimensions" class="drop-zone row-dims">
-                    <div class="drop-zone-empty">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                        <div>Drag dimensions here</div>
-                    </div>
+            <!-- Step 3: Select Fields -->
+            <div class="config-step" id="fieldsStep" style="display: none;">
+                <div class="step-header">
+                    <span class="step-number" id="step3">3</span>
+                    <span class="step-title">Select Fields</span>
                 </div>
-                <p class="config-hint">Fields to group rows by</p>
+                <p class="step-hint">Click fields to add them to your report</p>
+
+                <div class="fields-panel" id="availableFields">
+                    <div class="chips-placeholder" style="padding: 1rem; text-align: center;">Loading fields...</div>
+                </div>
             </div>
 
-            <!-- Column Dimensions -->
-            <div class="config-section">
-                <label class="config-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
-                    Column Dimensions
-                </label>
-                <div id="columnDimensions" class="drop-zone col-dims">
-                    <div class="drop-zone-empty">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                        <div>Drag dimensions here</div>
+            <!-- Step 4: Configure Columns -->
+            <div class="config-step" id="columnsStep" style="display: none;">
+                <div class="step-header">
+                    <span class="step-number" id="step4">4</span>
+                    <span class="step-title">Report Columns</span>
+                </div>
+                <p class="step-hint">Fields that will appear in your report</p>
+
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="font-size: 0.75rem; font-weight: 500; color: var(--secondary); margin-bottom: 0.375rem; display: block;">Group By (Dimensions)</label>
+                    <div id="selectedDimensions" class="field-chips">
+                        <span class="chips-placeholder">Click dimension fields above to add</span>
                     </div>
                 </div>
-                <p class="config-hint">Fields to group columns by (pivot)</p>
+
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 500; color: var(--secondary); margin-bottom: 0.375rem; display: block;">Calculate (Metrics)</label>
+                    <div id="selectedMetrics" class="field-chips">
+                        <span class="chips-placeholder">Click metric fields above to add</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Metrics -->
-            <div class="config-section">
-                <label class="config-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                    Metrics
-                </label>
-                <div id="metrics" class="drop-zone metrics-zone">
-                    <div class="drop-zone-empty">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                        <div>Drag metrics here</div>
-                    </div>
+            <!-- Step 5: Filters -->
+            <div class="config-step" id="filtersStep" style="display: none;">
+                <div class="step-header">
+                    <span class="step-number" id="step5">5</span>
+                    <span class="step-title">Filters (Optional)</span>
                 </div>
-                <p class="config-hint">Select aggregation type for each metric</p>
-            </div>
-
-            <!-- Filters -->
-            <div class="config-section">
-                <label class="config-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                    Filters
-                </label>
-                <div id="filters" class="drop-zone filters-zone">
-                    <div class="drop-zone-empty">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                        <div>Drag fields to filter by</div>
-                    </div>
-                </div>
-                <p class="config-hint">Add WHERE conditions to filter data</p>
+                <p class="step-hint">Add conditions to filter your data</p>
+                <div id="filtersList"></div>
+                <button id="addFilterBtn" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0.5rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    Add Filter
+                </button>
             </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="config-actions">
-            <button onclick="previewReport()" class="btn btn-secondary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <div class="panel-actions">
+            <button onclick="runPreview()" class="btn btn-secondary" id="previewBtn" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                 Preview
             </button>
-            <button onclick="saveTemplate()" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <button onclick="openSaveModal()" class="btn btn-primary" id="saveBtn" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Save Template
             </button>
         </div>
     </div>
 
-    <!-- Right Panel: Available Fields & Preview -->
-    <div class="fields-panel">
-        <div class="fields-panel-header">
-            <h2>Available Fields</h2>
-            <span id="fieldCount" class="badge badge-secondary" style="display: none;">0 fields</span>
+    <!-- Right Panel: Preview -->
+    <div class="preview-panel">
+        <div class="preview-header">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                Data Preview
+            </h3>
+            <div id="previewActions" style="display: none; align-items: center; gap: 1rem;">
+                <div class="view-tabs">
+                    <button class="view-tab active" data-view="table" onclick="switchView('table')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                        Table
+                    </button>
+                    <button class="view-tab" data-view="bar" onclick="switchView('bar')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="9" width="7" height="12" rx="1"/></svg>
+                        Bar
+                    </button>
+                    <button class="view-tab" data-view="line" onclick="switchView('line')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                        Line
+                    </button>
+                    <button class="view-tab" data-view="area" onclick="switchView('area')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M3 15l4-4 4 4 5-6 5 6"/></svg>
+                        Area
+                    </button>
+                    <button class="view-tab" data-view="pie" onclick="switchView('pie')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                        Pie
+                    </button>
+                    <button class="view-tab" data-view="donut" onclick="switchView('donut')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                        Donut
+                    </button>
+                </div>
+                <select id="pageSizeSelect" class="page-size-select" onchange="changePageSize()">
+                    <option value="10">10 rows</option>
+                    <option value="20" selected>20 rows</option>
+                    <option value="50">50 rows</option>
+                    <option value="100">100 rows</option>
+                </select>
+            </div>
         </div>
 
-        <div class="fields-panel-body">
-            <!-- Dimensions Column -->
-            <div class="fields-column">
-                <div class="fields-column-header">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                    <h3>Dimensions</h3>
-                    <span id="dimCount" class="badge badge-secondary">0</span>
-                </div>
-                <div id="dimensionsList" class="fields-list">
-                    <div class="loading-text">
-                        <span>Select a model to load fields</span>
-                    </div>
-                </div>
-            </div>
+        <div id="summaryCards" class="summary-cards" style="display: none;"></div>
 
-            <!-- Metrics Column -->
-            <div class="fields-column">
-                <div class="fields-column-header">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                    <h3>Metrics</h3>
-                    <span id="metricCount" class="badge badge-secondary">0</span>
-                </div>
-                <div id="metricsList" class="fields-list">
-                    <div class="loading-text">
-                        <span>Select a model to load fields</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="statsRow" class="stats-row" style="display: none;"></div>
 
-        <!-- Preview Section -->
-        <div class="preview-section">
-            <div class="preview-header">
-                <h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Data Preview
-                </h3>
-                <span id="previewStatus" class="badge badge-secondary" style="display: none;"></span>
-            </div>
-            <div id="previewContainer">
+        <div class="preview-body" id="previewBody">
+            <!-- Table view -->
+            <div id="tableView">
                 <div class="preview-placeholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                    <p>Configure your report and click "Preview" to see the data</p>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    <h4>Configure Your Report</h4>
+                    <p>Select a table and add fields to see a preview of your data</p>
                 </div>
+            </div>
+
+            <!-- Chart view -->
+            <div id="chartView" class="chart-container" style="display: none;">
+                <div id="previewChart"></div>
+            </div>
+        </div>
+
+        <div id="paginationBar" class="pagination-bar" style="display: none;">
+            <div class="pagination-info">
+                Showing <span id="showingFrom">0</span>-<span id="showingTo">0</span> of <span id="totalRecords">0</span> records
+            </div>
+            <div class="pagination-controls">
+                <button class="btn btn-secondary btn-sm" onclick="goToPage(1)" id="firstPageBtn" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="goToPage(currentPage - 1)" id="prevPageBtn" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span style="font-size: 0.8125rem;">
+                    Page <input type="number" id="currentPageInput" class="page-input" value="1" min="1" onchange="goToPage(parseInt(this.value))"> of <span id="totalPages">1</span>
+                </span>
+                <button class="btn btn-secondary btn-sm" onclick="goToPage(currentPage + 1)" id="nextPageBtn" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="goToPage(totalPages)" id="lastPageBtn" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                </button>
             </div>
         </div>
     </div>
@@ -730,27 +818,25 @@
 
 <!-- Save Template Modal -->
 <div id="saveModal" class="modal-backdrop">
-    <div class="modal" style="max-width: 480px;">
+    <div class="modal" style="max-width: 440px;">
         <div class="modal-header">
-            <h2>Save Template</h2>
+            <h2 style="font-size: 1.125rem; font-weight: 600;">Save Report Template</h2>
             <button onclick="closeSaveModal()" class="modal-close">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label class="form-label">Template Name <span style="color: #ef4444;">*</span></label>
-                <input type="text" id="templateName" class="form-input" placeholder="e.g., Sales Dashboard">
+                <label class="form-label">Template Name <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="templateName" class="form-input" placeholder="e.g., Monthly Sales Report">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Description</label>
-                <textarea id="templateDesc" class="form-input" placeholder="What does this report show?" rows="3" style="resize: vertical;"></textarea>
+                <textarea id="templateDesc" class="form-input" rows="2" placeholder="Brief description of this report" style="resize: vertical;"></textarea>
             </div>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
-                    <label class="form-label">Category <span style="color: #ef4444;">*</span></label>
+                    <label class="form-label">Category <span style="color: var(--danger);">*</span></label>
                     <select id="templateCategory" class="form-select">
                         <option value="">Select...</option>
                         <option value="Sales">Sales</option>
@@ -761,7 +847,6 @@
                         <option value="Other">Other</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Icon</label>
                     <input type="text" id="templateIcon" class="form-input" placeholder="📊" maxlength="2" style="text-align: center; font-size: 1.25rem;">
@@ -770,65 +855,99 @@
         </div>
         <div class="modal-footer">
             <button onclick="closeSaveModal()" class="btn btn-secondary">Cancel</button>
-            <button onclick="confirmSave()" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <button onclick="saveTemplate()" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
                 Save Template
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Filter Modal -->
+<div id="addFilterModal" class="modal-backdrop">
+    <div class="modal" style="max-width: 400px;">
+        <div class="modal-header">
+            <h2 style="font-size: 1.125rem; font-weight: 600;">Add Filter</h2>
+            <button onclick="closeAddFilterModal()" class="modal-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Field to Filter</label>
+                <select id="filterFieldSelect" class="form-select">
+                    <option value="">Select field...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Condition</label>
+                <select id="filterOperatorSelect" class="form-select">
+                    <option value="=">=  (equals)</option>
+                    <option value="!=">!= (not equals)</option>
+                    <option value=">">&#62; (greater than)</option>
+                    <option value=">=">&#62;= (greater or equal)</option>
+                    <option value="<">&#60; (less than)</option>
+                    <option value="<=">&#60;= (less or equal)</option>
+                    <option value="like">Contains</option>
+                    <option value="is_null">Is Empty</option>
+                    <option value="is_not_null">Is Not Empty</option>
+                </select>
+            </div>
+            <div class="form-group" id="filterValueGroup">
+                <label class="form-label">Value</label>
+                <input type="text" id="filterValueInput" class="form-input" placeholder="Enter value...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeAddFilterModal()" class="btn btn-secondary">Cancel</button>
+            <button onclick="confirmAddFilter()" class="btn btn-primary">Add Filter</button>
         </div>
     </div>
 </div>
 @endsection
 
 @section('scripts')
-<!-- SortableJS for Drag-and-Drop -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-
 <script>
+    // State
     let currentModel = null;
-    let selectedRelationships = []; // Array of selected relationships
-    let allRelationships = []; // All available relationships
     let availableDimensions = [];
     let availableMetrics = [];
-    let allDimensions = []; // Combined dimensions from all tables
-    let allMetrics = []; // Combined metrics from all tables
+    let allRelationships = [];
+    let selectedRelationships = [];
+    let previewData = [];
+    let currentPage = 1;
+    let pageSize = 20;
+    let totalRecords = 0;
+    let totalPages = 1;
+    let currentView = 'table';
+    let chartInstance = null;
 
-    // Aggregation types
-    const AGGREGATION_TYPES = [
+    // Chart colors palette
+    const chartColors = [
+        '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+        '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6',
+        '#a855f7', '#d946ef', '#ec4899', '#f43f5e'
+    ];
+
+    const reportConfig = {
+        model: null,
+        relationships: [],
+        dimensions: [],
+        metrics: [],
+        filters: []
+    };
+
+    const AGGREGATES = [
         { value: 'sum', label: 'SUM' },
         { value: 'count', label: 'COUNT' },
         { value: 'avg', label: 'AVG' },
         { value: 'min', label: 'MIN' },
-        { value: 'max', label: 'MAX' },
+        { value: 'max', label: 'MAX' }
     ];
 
-    // Filter operators
-    const FILTER_OPERATORS = [
-        { value: '=', label: '=' },
-        { value: '!=', label: '!=' },
-        { value: '>', label: '>' },
-        { value: '>=', label: '>=' },
-        { value: '<', label: '<' },
-        { value: '<=', label: '<=' },
-        { value: 'like', label: 'LIKE' },
-        { value: 'in', label: 'IN' },
-        { value: 'not_in', label: 'NOT IN' },
-        { value: 'is_null', label: 'IS NULL' },
-        { value: 'is_not_null', label: 'IS NOT NULL' },
-    ];
-
-    let reportConfig = {
-        model: null,
-        relationships: [], // Array of relationship names to join
-        row_dimensions: [],
-        column_dimensions: [],
-        metrics: [],
-        filters: [],
-    };
-
-    // Initialize on page load
+    // Initialize
     document.addEventListener('DOMContentLoaded', loadModels);
 
-    // Load all available models
     async function loadModels() {
         try {
             const response = await window.apiClient.get('/api/visual-reports/models');
@@ -843,749 +962,988 @@
             });
         } catch (error) {
             console.error('Error loading models:', error);
-            showNotification('Failed to load models. Please refresh the page.', 'error');
+            alert('Failed to load tables. Please refresh the page.');
         }
     }
 
-    // Show notification
-    function showNotification(message, type = 'info') {
-        alert(message);
-    }
-
-    // When model is selected
+    // Model selection
     document.getElementById('modelSelect').addEventListener('change', async (e) => {
         currentModel = e.target.value;
         reportConfig.model = currentModel;
+
+        // Reset state
         selectedRelationships = [];
         reportConfig.relationships = [];
-
-        // Reset configuration
-        reportConfig.row_dimensions = [];
-        reportConfig.column_dimensions = [];
+        reportConfig.dimensions = [];
         reportConfig.metrics = [];
         reportConfig.filters = [];
-        updateDimensionsDisplay();
-        updateMetricsDisplay();
-        updateFiltersDisplay();
+        availableDimensions = [];
+        availableMetrics = [];
 
-        // Clear preview
-        document.getElementById('previewContainer').innerHTML = `
-            <div class="preview-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                <p>Configure your report and click "Preview" to see the data</p>
-            </div>
-        `;
+        updateSelectedFields();
+        updateFiltersList();
+        hidePreview();
+        updateButtons();
 
         if (!currentModel) {
-            document.getElementById('dimensionsList').innerHTML = '<div class="loading-text"><span>Select a model to load fields</span></div>';
-            document.getElementById('metricsList').innerHTML = '<div class="loading-text"><span>Select a model to load fields</span></div>';
-            document.getElementById('relationshipsContainer').style.display = 'none';
-            updateFieldCounts(0, 0);
+            document.getElementById('step1').classList.remove('completed');
+            document.getElementById('relationshipsStep').style.display = 'none';
+            document.getElementById('fieldsStep').style.display = 'none';
+            document.getElementById('columnsStep').style.display = 'none';
+            document.getElementById('filtersStep').style.display = 'none';
             return;
         }
 
-        // Show loading state
-        document.getElementById('dimensionsList').innerHTML = `
-            <div class="loading-text">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                <span>Loading dimensions...</span>
-            </div>
-        `;
-        document.getElementById('metricsList').innerHTML = `
-            <div class="loading-text">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                <span>Loading metrics...</span>
-            </div>
-        `;
+        document.getElementById('step1').classList.add('completed');
 
+        // Load relationships
         try {
-            // Load dimensions and metrics (URL encode the model class name)
             const encodedModel = encodeURIComponent(currentModel);
-            const [dimensions, metrics] = await Promise.all([
-                window.apiClient.get(`/api/visual-reports/models/${encodedModel}/dimensions`),
-                window.apiClient.get(`/api/visual-reports/models/${encodedModel}/metrics`)
-            ]);
-
-            // Store base model fields with table info
-            availableDimensions = (dimensions || []).map(d => ({
-                ...d,
-                table: 'primary',
-                tableLabel: getModelName(currentModel)
-            }));
-            availableMetrics = (metrics || []).map(m => ({
-                ...m,
-                table: 'primary',
-                tableLabel: getModelName(currentModel)
-            }));
-
-            // Initialize all fields with base model
-            allDimensions = [...availableDimensions];
-            allMetrics = [...availableMetrics];
-
-            displayDimensions(allDimensions);
-            displayMetrics(allMetrics);
-            updateFieldCounts(allDimensions.length, allMetrics.length);
-
-            // Load relationships
-            try {
-                const relationshipsResponse = await window.apiClient.get(`/api/visual-reports/models/${encodedModel}/relationships`);
-                allRelationships = relationshipsResponse.relationships || relationshipsResponse || [];
-                loadRelationships(allRelationships);
-            } catch (err) {
-                console.log('No relationships found for this model');
-                document.getElementById('relationshipsContainer').style.display = 'none';
-            }
-        } catch (error) {
-            console.error('Error loading metadata:', error);
-            showNotification('Failed to load dimensions and metrics for this model', 'error');
-            document.getElementById('dimensionsList').innerHTML = '<div class="loading-text" style="color: #ef4444;"><span>Error loading dimensions</span></div>';
-            document.getElementById('metricsList').innerHTML = '<div class="loading-text" style="color: #ef4444;"><span>Error loading metrics</span></div>';
+            const relResponse = await window.apiClient.get(`/api/visual-reports/models/${encodedModel}/relationships`);
+            allRelationships = relResponse.relationships || relResponse || [];
+            renderRelationships();
+            document.getElementById('relationshipsStep').style.display = 'block';
+        } catch (e) {
+            document.getElementById('relationshipsStep').style.display = 'none';
         }
+
+        // Load fields
+        await loadModelFields(currentModel, 'primary', getModelName(currentModel));
+
+        document.getElementById('fieldsStep').style.display = 'block';
+        document.getElementById('columnsStep').style.display = 'block';
+        document.getElementById('filtersStep').style.display = 'block';
     });
 
-    // Get model name from class
     function getModelName(modelClass) {
-        const parts = modelClass.split('\\');
-        return parts[parts.length - 1];
+        return modelClass.split('\\').pop();
     }
 
-    // Update field counts
-    function updateFieldCounts(dimCount, metricCount) {
-        document.getElementById('dimCount').textContent = dimCount;
-        document.getElementById('metricCount').textContent = metricCount;
-
-        const totalCount = dimCount + metricCount;
-        const fieldCountBadge = document.getElementById('fieldCount');
-        if (totalCount > 0) {
-            fieldCountBadge.textContent = `${totalCount} fields`;
-            fieldCountBadge.style.display = 'inline-flex';
-        } else {
-            fieldCountBadge.style.display = 'none';
-        }
-    }
-
-    // Display dimensions as draggable items
-    function displayDimensions(dimensions) {
-        const container = document.getElementById('dimensionsList');
-        container.innerHTML = '';
-
-        if (!dimensions || dimensions.length === 0) {
-            container.innerHTML = '<div class="loading-text"><span>No dimensions available</span></div>';
-            return;
-        }
-
-        dimensions.forEach(dim => {
-            const item = document.createElement('div');
-            item.className = `field-item dimension ${dim.table !== 'primary' ? 'related' : ''}`;
-            item.draggable = true;
-            item.dataset.column = dim.column;
-            item.dataset.label = dim.label || dim.column;
-            item.dataset.type = 'dimension';
-            item.dataset.table = dim.table || 'primary';
-            item.dataset.tableLabel = dim.tableLabel || '';
-            item.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                <span class="field-name">${dim.label || dim.column}</span>
-                ${dim.table !== 'primary' ? `<span class="field-table">${dim.tableLabel}</span>` : ''}
-            `;
-            item.addEventListener('dragstart', handleDragStart);
-            container.appendChild(item);
-        });
-    }
-
-    // Display metrics as draggable items
-    function displayMetrics(metrics) {
-        const container = document.getElementById('metricsList');
-        container.innerHTML = '';
-
-        if (!metrics || metrics.length === 0) {
-            container.innerHTML = '<div class="loading-text"><span>No metrics available</span></div>';
-            return;
-        }
-
-        metrics.forEach(metric => {
-            const item = document.createElement('div');
-            item.className = `field-item metric ${metric.table !== 'primary' ? 'related' : ''}`;
-            item.draggable = true;
-            item.dataset.column = metric.column;
-            item.dataset.label = metric.label || metric.column;
-            item.dataset.aggregate = metric.default_aggregate || 'sum';
-            item.dataset.type = 'metric';
-            item.dataset.table = metric.table || 'primary';
-            item.dataset.tableLabel = metric.tableLabel || '';
-            item.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                <span class="field-name">${metric.label || metric.column}</span>
-                ${metric.table !== 'primary' ? `<span class="field-table">${metric.tableLabel}</span>` : ''}
-            `;
-            item.addEventListener('dragstart', handleDragStart);
-            container.appendChild(item);
-        });
-    }
-
-    // Load relationships as multi-select checkboxes
-    function loadRelationships(relationships) {
-        const container = document.getElementById('relationshipsContainer');
-        const list = document.getElementById('relationshipsList');
-
-        if (!relationships || relationships.length === 0) {
-            container.style.display = 'none';
-            return;
-        }
-
-        container.style.display = 'block';
-        list.innerHTML = '';
-
-        relationships.forEach(rel => {
-            const item = document.createElement('label');
-            item.className = 'related-table-item';
-            item.innerHTML = `
-                <input type="checkbox" value="${rel.name}" data-relationship='${JSON.stringify(rel)}'>
-                <span>${rel.label}</span>
-                <span class="rel-type">${rel.type}</span>
-            `;
-
-            const checkbox = item.querySelector('input[type="checkbox"]');
-            checkbox.addEventListener('change', async (e) => {
-                if (e.target.checked) {
-                    await addRelationship(rel);
-                } else {
-                    removeRelationship(rel);
-                }
-            });
-
-            list.appendChild(item);
-        });
-    }
-
-    // Add relationship and load its fields
-    async function addRelationship(rel) {
-        selectedRelationships.push(rel);
-        reportConfig.relationships.push(rel.name);
-
+    async function loadModelFields(modelClass, tableKey, tableLabel) {
         try {
-            const encodedRelatedModel = encodeURIComponent(rel.related_model);
-            const [dimensions, metrics] = await Promise.all([
-                window.apiClient.get(`/api/visual-reports/models/${encodedRelatedModel}/dimensions`),
-                window.apiClient.get(`/api/visual-reports/models/${encodedRelatedModel}/metrics`)
+            const encoded = encodeURIComponent(modelClass);
+            const [dims, mets] = await Promise.all([
+                window.apiClient.get(`/api/visual-reports/models/${encoded}/dimensions`),
+                window.apiClient.get(`/api/visual-reports/models/${encoded}/metrics`)
             ]);
 
-            // Add relationship prefix to related model's fields
-            const prefixedDimensions = (dimensions || []).map(d => ({
+            const newDims = (dims || []).map(d => ({
                 ...d,
-                column: `${rel.name}.${d.column}`,
-                label: d.label || d.column,
-                table: rel.name,
-                tableLabel: rel.label
+                column: tableKey === 'primary' ? d.column : `${tableKey}.${d.column}`,
+                table: tableKey,
+                tableLabel: tableLabel
             }));
 
-            const prefixedMetrics = (metrics || []).map(m => ({
+            const newMets = (mets || []).map(m => ({
                 ...m,
-                column: `${rel.name}.${m.column}`,
-                label: m.label || m.column,
-                table: rel.name,
-                tableLabel: rel.label
+                column: tableKey === 'primary' ? m.column : `${tableKey}.${m.column}`,
+                table: tableKey,
+                tableLabel: tableLabel,
+                aggregate: m.default_aggregate || 'sum'
             }));
 
-            // Merge with existing fields
-            allDimensions = [...availableDimensions, ...allDimensions.filter(d => d.table !== rel.name), ...prefixedDimensions];
-            allMetrics = [...availableMetrics, ...allMetrics.filter(m => m.table !== rel.name), ...prefixedMetrics];
+            // Add/replace fields for this table
+            availableDimensions = availableDimensions.filter(d => d.table !== tableKey).concat(newDims);
+            availableMetrics = availableMetrics.filter(m => m.table !== tableKey).concat(newMets);
 
-            displayDimensions(allDimensions);
-            displayMetrics(allMetrics);
-            updateFieldCounts(allDimensions.length, allMetrics.length);
-        } catch (error) {
-            console.error('Error loading related model fields:', error);
-            showNotification('Failed to load related model fields', 'error');
+            renderAvailableFields();
+        } catch (e) {
+            console.error('Error loading fields:', e);
         }
     }
 
-    // Remove relationship and its fields
-    function removeRelationship(rel) {
-        selectedRelationships = selectedRelationships.filter(r => r.name !== rel.name);
-        reportConfig.relationships = reportConfig.relationships.filter(r => r !== rel.name);
+    function removeTableFields(tableKey) {
+        availableDimensions = availableDimensions.filter(d => d.table !== tableKey);
+        availableMetrics = availableMetrics.filter(m => m.table !== tableKey);
 
-        // Remove fields from this relationship
-        allDimensions = allDimensions.filter(d => d.table !== rel.name);
-        allMetrics = allMetrics.filter(m => m.table !== rel.name);
+        // Remove from selected
+        reportConfig.dimensions = reportConfig.dimensions.filter(d => d.table !== tableKey);
+        reportConfig.metrics = reportConfig.metrics.filter(m => m.table !== tableKey);
+        reportConfig.filters = reportConfig.filters.filter(f => !f.column.startsWith(tableKey + '.'));
 
-        // Remove from config if any were selected
-        reportConfig.row_dimensions = reportConfig.row_dimensions.filter(d => !d.column.startsWith(rel.name + '.'));
-        reportConfig.column_dimensions = reportConfig.column_dimensions.filter(d => !d.column.startsWith(rel.name + '.'));
-        reportConfig.metrics = reportConfig.metrics.filter(m => !m.column.startsWith(rel.name + '.'));
-        reportConfig.filters = reportConfig.filters.filter(f => !f.column.startsWith(rel.name + '.'));
-
-        displayDimensions(allDimensions);
-        displayMetrics(allMetrics);
-        updateFieldCounts(allDimensions.length, allMetrics.length);
-        updateDimensionsDisplay();
-        updateMetricsDisplay();
-        updateFiltersDisplay();
+        renderAvailableFields();
+        updateSelectedFields();
+        updateFiltersList();
     }
 
-    // Drag and drop handlers
-    function handleDragStart(e) {
-        e.dataTransfer.effectAllowed = 'copy';
-        e.dataTransfer.setData('column', e.target.dataset.column);
-        e.dataTransfer.setData('label', e.target.dataset.label);
-        e.dataTransfer.setData('type', e.target.dataset.type);
-        e.dataTransfer.setData('aggregate', e.target.dataset.aggregate || 'sum');
-        e.dataTransfer.setData('table', e.target.dataset.table || 'primary');
-        e.dataTransfer.setData('tableLabel', e.target.dataset.tableLabel || '');
-        e.target.style.opacity = '0.5';
+    function renderRelationships() {
+        const container = document.getElementById('relationshipsList');
 
-        // Reset opacity after drag ends
-        e.target.addEventListener('dragend', () => {
-            e.target.style.opacity = '1';
-        }, { once: true });
-    }
-
-    // Setup drop zones
-    setupDropZone('rowDimensions', 'dimension');
-    setupDropZone('columnDimensions', 'dimension');
-    setupDropZone('metrics', 'metric');
-    setupDropZone('filters', 'filter');
-
-    function setupDropZone(elementId, type) {
-        const zone = document.getElementById(elementId);
-
-        zone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
-            zone.classList.add('drag-over');
-        });
-
-        zone.addEventListener('dragleave', (e) => {
-            if (!zone.contains(e.relatedTarget)) {
-                zone.classList.remove('drag-over');
-            }
-        });
-
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            zone.classList.remove('drag-over');
-
-            const dragType = e.dataTransfer.getData('type');
-            const column = e.dataTransfer.getData('column');
-            const label = e.dataTransfer.getData('label');
-            const aggregate = e.dataTransfer.getData('aggregate');
-            const table = e.dataTransfer.getData('table');
-            const tableLabel = e.dataTransfer.getData('tableLabel');
-
-            if (type === 'dimension' && dragType === 'dimension') {
-                if (elementId === 'rowDimensions') {
-                    const isDuplicate = reportConfig.row_dimensions.some(d => d.column === column);
-                    if (!isDuplicate) {
-                        reportConfig.row_dimensions.push({column, label, table, tableLabel});
-                        updateDimensionsDisplay();
-                    } else {
-                        showNotification(`"${label}" is already in Row Dimensions`, 'warning');
-                    }
-                } else if (elementId === 'columnDimensions') {
-                    const isDuplicate = reportConfig.column_dimensions.some(d => d.column === column);
-                    if (!isDuplicate) {
-                        reportConfig.column_dimensions.push({column, label, table, tableLabel});
-                        updateDimensionsDisplay();
-                    } else {
-                        showNotification(`"${label}" is already in Column Dimensions`, 'warning');
-                    }
-                }
-            } else if (type === 'metric' && dragType === 'metric') {
-                // Add with default aggregate, user can change it
-                reportConfig.metrics.push({
-                    column: column,
-                    label: label,
-                    aggregate: aggregate,
-                    alias: `${column.replace('.', '_')}_${aggregate}`,
-                    table: table,
-                    tableLabel: tableLabel
-                });
-                updateMetricsDisplay();
-            } else if (type === 'filter') {
-                // Both dimensions and metrics can be used as filters
-                const isDuplicate = reportConfig.filters.some(f => f.column === column);
-                if (!isDuplicate) {
-                    reportConfig.filters.push({
-                        column: column,
-                        label: label,
-                        operator: '=',
-                        value: '',
-                        table: table,
-                        tableLabel: tableLabel
-                    });
-                    updateFiltersDisplay();
-                } else {
-                    showNotification(`"${label}" is already added as a filter`, 'warning');
-                }
-            }
-        });
-    }
-
-    // Update display of selected dimensions
-    function updateDimensionsDisplay() {
-        const rowDiv = document.getElementById('rowDimensions');
-        const colDiv = document.getElementById('columnDimensions');
-
-        rowDiv.innerHTML = '';
-        colDiv.innerHTML = '';
-
-        if (reportConfig.row_dimensions.length === 0) {
-            rowDiv.innerHTML = `
-                <div class="drop-zone-empty">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                    <div>Drag dimensions here</div>
-                </div>
-            `;
-        } else {
-            reportConfig.row_dimensions.forEach((dim, i) => {
-                const tag = createDimensionTag(dim, i, () => {
-                    reportConfig.row_dimensions.splice(i, 1);
-                    updateDimensionsDisplay();
-                });
-                rowDiv.appendChild(tag);
-            });
+        if (!allRelationships.length) {
+            container.innerHTML = '<div class="chips-placeholder" style="padding: 1rem; text-align: center;">No related tables available</div>';
+            return;
         }
 
-        if (reportConfig.column_dimensions.length === 0) {
-            colDiv.innerHTML = `
-                <div class="drop-zone-empty">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                    <div>Drag dimensions here</div>
+        let html = '';
+        allRelationships.forEach(rel => {
+            html += `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="rel_${rel.name}" value="${rel.name}" onchange="toggleRelationship('${rel.name}', this.checked)">
+                    <label for="rel_${rel.name}">${rel.label}</label>
+                    <span class="item-badge">${rel.type}</span>
                 </div>
             `;
+        });
+        container.innerHTML = html;
+    }
+
+    async function toggleRelationship(relName, checked) {
+        const rel = allRelationships.find(r => r.name === relName);
+        if (!rel) return;
+
+        if (checked) {
+            selectedRelationships.push(rel);
+            reportConfig.relationships.push(relName);
+            await loadModelFields(rel.related_model, relName, rel.label);
         } else {
-            reportConfig.column_dimensions.forEach((dim, i) => {
-                const tag = createDimensionTag(dim, i, () => {
-                    reportConfig.column_dimensions.splice(i, 1);
-                    updateDimensionsDisplay();
-                });
-                colDiv.appendChild(tag);
-            });
+            selectedRelationships = selectedRelationships.filter(r => r.name !== relName);
+            reportConfig.relationships = reportConfig.relationships.filter(r => r !== relName);
+            removeTableFields(relName);
         }
+
+        updateButtons();
     }
 
-    // Create dimension tag
-    function createDimensionTag(dim, index, onRemove) {
-        const tag = document.createElement('span');
-        tag.className = 'zone-tag dimension-tag';
-        tag.innerHTML = `
-            <div class="tag-info">
-                <span class="tag-name">${dim.label || dim.column}</span>
-                ${dim.table !== 'primary' ? `<span class="tag-detail">${dim.tableLabel}</span>` : ''}
-            </div>
-            <button type="button" class="remove-btn" title="Remove">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        `;
-        tag.querySelector('.remove-btn').onclick = (e) => {
-            e.preventDefault();
-            onRemove();
-        };
-        return tag;
-    }
+    function renderAvailableFields() {
+        const container = document.getElementById('availableFields');
 
-    // Update display of selected metrics with aggregate selector
-    function updateMetricsDisplay() {
-        const div = document.getElementById('metrics');
-        div.innerHTML = '';
+        // Group by table
+        const tables = {};
 
-        if (reportConfig.metrics.length === 0) {
-            div.innerHTML = `
-                <div class="drop-zone-empty">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                    <div>Drag metrics here</div>
-                </div>
-            `;
-        } else {
-            reportConfig.metrics.forEach((metric, i) => {
-                const tag = document.createElement('span');
-                tag.className = 'zone-tag metric-tag';
-                tag.innerHTML = `
-                    <div class="tag-info">
-                        <span class="tag-name">${metric.label}</span>
-                        ${metric.table !== 'primary' ? `<span class="tag-detail">${metric.tableLabel}</span>` : ''}
-                    </div>
-                    <select class="aggregate-select" data-index="${i}">
-                        ${AGGREGATION_TYPES.map(agg =>
-                            `<option value="${agg.value}" ${metric.aggregate === agg.value ? 'selected' : ''}>${agg.label}</option>`
-                        ).join('')}
-                    </select>
-                    <button type="button" class="remove-btn" title="Remove">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        availableDimensions.forEach(d => {
+            if (!tables[d.table]) tables[d.table] = { label: d.tableLabel, dimensions: [], metrics: [] };
+            tables[d.table].dimensions.push(d);
+        });
+
+        availableMetrics.forEach(m => {
+            if (!tables[m.table]) tables[m.table] = { label: m.tableLabel, dimensions: [], metrics: [] };
+            tables[m.table].metrics.push(m);
+        });
+
+        let html = '';
+
+        Object.entries(tables).forEach(([tableKey, table]) => {
+            html += `<div class="field-group">
+                <div class="field-group-title">${table.label} ${tableKey !== 'primary' ? '<span style="color: #6366f1;">(joined)</span>' : ''}</div>
+                <div class="field-list">`;
+
+            // Dimensions
+            table.dimensions.forEach(d => {
+                const isSelected = reportConfig.dimensions.some(sel => sel.column === d.column);
+                html += `
+                    <button type="button" class="field-button dimension ${isSelected ? 'selected' : ''}"
+                        onclick="toggleDimension('${d.column}')"
+                        data-column="${d.column}"
+                        style="${isSelected ? 'opacity: 0.5;' : ''}">
+                        ${d.label}
                     </button>
                 `;
-
-                // Handle aggregate change
-                tag.querySelector('.aggregate-select').addEventListener('change', (e) => {
-                    reportConfig.metrics[i].aggregate = e.target.value;
-                    reportConfig.metrics[i].alias = `${reportConfig.metrics[i].column.replace('.', '_')}_${e.target.value}`;
-                });
-
-                tag.querySelector('.remove-btn').onclick = (e) => {
-                    e.preventDefault();
-                    reportConfig.metrics.splice(i, 1);
-                    updateMetricsDisplay();
-                };
-
-                div.appendChild(tag);
             });
+
+            // Metrics
+            table.metrics.forEach(m => {
+                const isSelected = reportConfig.metrics.some(sel => sel.column === m.column);
+                html += `
+                    <button type="button" class="field-button metric ${isSelected ? 'selected' : ''}"
+                        onclick="toggleMetric('${m.column}')"
+                        data-column="${m.column}"
+                        style="${isSelected ? 'opacity: 0.5;' : ''}">
+                        ${m.label}
+                    </button>
+                `;
+            });
+
+            html += '</div></div>';
+        });
+
+        container.innerHTML = html || '<div class="chips-placeholder" style="padding: 1rem; text-align: center;">No fields available</div>';
+    }
+
+    function toggleDimension(column) {
+        const existing = reportConfig.dimensions.findIndex(d => d.column === column);
+
+        if (existing >= 0) {
+            reportConfig.dimensions.splice(existing, 1);
+        } else {
+            const dim = availableDimensions.find(d => d.column === column);
+            if (dim) {
+                reportConfig.dimensions.push({ ...dim });
+            }
+        }
+
+        renderAvailableFields();
+        updateSelectedFields();
+        updateButtons();
+    }
+
+    function toggleMetric(column) {
+        const existing = reportConfig.metrics.findIndex(m => m.column === column);
+
+        if (existing >= 0) {
+            reportConfig.metrics.splice(existing, 1);
+        } else {
+            const met = availableMetrics.find(m => m.column === column);
+            if (met) {
+                reportConfig.metrics.push({
+                    ...met,
+                    aggregate: met.aggregate || 'sum',
+                    alias: `${column.replace('.', '_')}_${met.aggregate || 'sum'}`
+                });
+            }
+        }
+
+        renderAvailableFields();
+        updateSelectedFields();
+        updateButtons();
+    }
+
+    function updateSelectedFields() {
+        // Dimensions
+        const dimsContainer = document.getElementById('selectedDimensions');
+        if (reportConfig.dimensions.length === 0) {
+            dimsContainer.innerHTML = '<span class="chips-placeholder">Click dimension fields above to add</span>';
+            dimsContainer.classList.remove('has-items');
+        } else {
+            dimsContainer.classList.add('has-items');
+            let html = '';
+            reportConfig.dimensions.forEach((d, i) => {
+                html += `
+                    <div class="field-chip dimension">
+                        <span class="chip-label">${d.label}</span>
+                        ${d.table !== 'primary' ? `<span class="chip-table">${d.tableLabel}</span>` : ''}
+                        <button type="button" class="remove-chip" onclick="removeDimension(${i})">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                    </div>
+                `;
+            });
+            dimsContainer.innerHTML = html;
+        }
+
+        // Metrics
+        const metsContainer = document.getElementById('selectedMetrics');
+        if (reportConfig.metrics.length === 0) {
+            metsContainer.innerHTML = '<span class="chips-placeholder">Click metric fields above to add</span>';
+            metsContainer.classList.remove('has-items');
+        } else {
+            metsContainer.classList.add('has-items');
+            let html = '';
+            reportConfig.metrics.forEach((m, i) => {
+                html += `
+                    <div class="field-chip metric">
+                        <span class="chip-label">${m.label}</span>
+                        ${m.table !== 'primary' ? `<span class="chip-table">${m.tableLabel}</span>` : ''}
+                        <select onchange="changeAggregate(${i}, this.value)">
+                            ${AGGREGATES.map(a => `<option value="${a.value}" ${m.aggregate === a.value ? 'selected' : ''}>${a.label}</option>`).join('')}
+                        </select>
+                        <button type="button" class="remove-chip" onclick="removeMetric(${i})">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                    </div>
+                `;
+            });
+            metsContainer.innerHTML = html;
         }
     }
 
-    // Update display of filters
-    function updateFiltersDisplay() {
-        const div = document.getElementById('filters');
-        div.innerHTML = '';
+    function removeDimension(index) {
+        reportConfig.dimensions.splice(index, 1);
+        renderAvailableFields();
+        updateSelectedFields();
+        updateButtons();
+    }
+
+    function removeMetric(index) {
+        reportConfig.metrics.splice(index, 1);
+        renderAvailableFields();
+        updateSelectedFields();
+        updateButtons();
+    }
+
+    function changeAggregate(index, value) {
+        reportConfig.metrics[index].aggregate = value;
+        reportConfig.metrics[index].alias = `${reportConfig.metrics[index].column.replace('.', '_')}_${value}`;
+    }
+
+    // Filters
+    document.getElementById('addFilterBtn').addEventListener('click', openAddFilterModal);
+
+    document.getElementById('filterOperatorSelect').addEventListener('change', (e) => {
+        const valueGroup = document.getElementById('filterValueGroup');
+        valueGroup.style.display = ['is_null', 'is_not_null'].includes(e.target.value) ? 'none' : 'block';
+    });
+
+    function openAddFilterModal() {
+        // Populate field select
+        const select = document.getElementById('filterFieldSelect');
+        select.innerHTML = '<option value="">Select field...</option>';
+
+        const allFields = [...availableDimensions, ...availableMetrics];
+        allFields.forEach(f => {
+            select.innerHTML += `<option value="${f.column}">${f.label}${f.table !== 'primary' ? ` (${f.tableLabel})` : ''}</option>`;
+        });
+
+        document.getElementById('filterOperatorSelect').value = '=';
+        document.getElementById('filterValueInput').value = '';
+        document.getElementById('filterValueGroup').style.display = 'block';
+        document.getElementById('addFilterModal').classList.add('active');
+    }
+
+    function closeAddFilterModal() {
+        document.getElementById('addFilterModal').classList.remove('active');
+    }
+
+    function confirmAddFilter() {
+        const column = document.getElementById('filterFieldSelect').value;
+        const operator = document.getElementById('filterOperatorSelect').value;
+        const value = document.getElementById('filterValueInput').value;
+
+        if (!column) {
+            alert('Please select a field');
+            return;
+        }
+
+        if (!['is_null', 'is_not_null'].includes(operator) && !value) {
+            alert('Please enter a value');
+            return;
+        }
+
+        const field = [...availableDimensions, ...availableMetrics].find(f => f.column === column);
+
+        reportConfig.filters.push({
+            column,
+            label: field?.label || column,
+            operator,
+            value,
+            table: field?.table || 'primary'
+        });
+
+        updateFiltersList();
+        closeAddFilterModal();
+    }
+
+    function updateFiltersList() {
+        const container = document.getElementById('filtersList');
 
         if (reportConfig.filters.length === 0) {
-            div.innerHTML = `
-                <div class="drop-zone-empty">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                    <div>Drag fields to filter by</div>
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        reportConfig.filters.forEach((f, i) => {
+            const operatorLabels = {
+                '=': '=', '!=': '!=', '>': '>', '>=': '>=', '<': '<', '<=': '<=',
+                'like': 'contains', 'is_null': 'is empty', 'is_not_null': 'is not empty'
+            };
+
+            html += `
+                <div class="filter-row">
+                    <span class="filter-column">${f.label}</span>
+                    <span style="color: var(--secondary); font-size: 0.75rem;">${operatorLabels[f.operator] || f.operator}</span>
+                    ${!['is_null', 'is_not_null'].includes(f.operator) ? `<span style="font-size: 0.8125rem; font-weight: 500;">${f.value}</span>` : ''}
+                    <button type="button" class="remove-chip" onclick="removeFilter(${i})" style="margin-left: auto;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
                 </div>
             `;
-        } else {
-            reportConfig.filters.forEach((filter, i) => {
-                const item = document.createElement('div');
-                item.className = 'filter-item';
+        });
 
-                const needsValue = !['is_null', 'is_not_null'].includes(filter.operator);
-
-                item.innerHTML = `
-                    <span style="font-weight: 500; min-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${filter.label}</span>
-                    <select class="operator-select" data-index="${i}">
-                        ${FILTER_OPERATORS.map(op =>
-                            `<option value="${op.value}" ${filter.operator === op.value ? 'selected' : ''}>${op.label}</option>`
-                        ).join('')}
-                    </select>
-                    <input type="text" class="value-input" data-index="${i}" placeholder="Value..." value="${filter.value || ''}" ${needsValue ? '' : 'style="display:none;"'}>
-                    <button type="button" class="remove-btn" title="Remove">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                    </button>
-                `;
-
-                // Handle operator change
-                item.querySelector('.operator-select').addEventListener('change', (e) => {
-                    reportConfig.filters[i].operator = e.target.value;
-                    const needsVal = !['is_null', 'is_not_null'].includes(e.target.value);
-                    item.querySelector('.value-input').style.display = needsVal ? '' : 'none';
-                });
-
-                // Handle value change
-                item.querySelector('.value-input').addEventListener('input', (e) => {
-                    reportConfig.filters[i].value = e.target.value;
-                });
-
-                // Handle remove
-                item.querySelector('.remove-btn').onclick = (e) => {
-                    e.preventDefault();
-                    reportConfig.filters.splice(i, 1);
-                    updateFiltersDisplay();
-                };
-
-                div.appendChild(item);
-            });
-        }
+        container.innerHTML = html;
     }
 
-    // Preview the report
-    async function previewReport() {
-        if (!reportConfig.model) {
-            showNotification('Please select a data source', 'warning');
+    function removeFilter(index) {
+        reportConfig.filters.splice(index, 1);
+        updateFiltersList();
+    }
+
+    function updateButtons() {
+        const hasMetrics = reportConfig.metrics.length > 0;
+        document.getElementById('previewBtn').disabled = !hasMetrics;
+        document.getElementById('saveBtn').disabled = !hasMetrics;
+    }
+
+    // Preview
+    async function runPreview() {
+        if (reportConfig.metrics.length === 0) {
+            alert('Please add at least one metric field');
             return;
         }
 
-        if (reportConfig.metrics.length === 0) {
-            showNotification('Please add at least one metric to preview', 'warning');
-            return;
+        currentPage = 1;
+        await fetchPreviewData();
+    }
+
+    async function fetchPreviewData() {
+        const tableView = document.getElementById('tableView');
+        const chartView = document.getElementById('chartView');
+
+        // Show loading state in current view
+        const loadingHtml = `
+            <div class="preview-placeholder">
+                <div class="loading-spinner"></div>
+                <p>Loading data...</p>
+            </div>
+        `;
+
+        if (currentView === 'table') {
+            tableView.innerHTML = loadingHtml;
+        } else {
+            document.getElementById('previewChart').innerHTML = loadingHtml;
         }
 
         try {
-            const container = document.getElementById('previewContainer');
-            const statusBadge = document.getElementById('previewStatus');
-
-            container.innerHTML = `
-                <div class="preview-placeholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                    <p>Loading preview...</p>
-                </div>
-            `;
-            statusBadge.style.display = 'none';
-
             const response = await window.apiClient.post('/api/visual-reports/preview', {
                 model: reportConfig.model,
                 relationships: reportConfig.relationships,
-                row_dimensions: reportConfig.row_dimensions.map(d => d.column),
-                column_dimensions: reportConfig.column_dimensions.map(d => d.column),
+                row_dimensions: reportConfig.dimensions.map(d => d.column),
+                column_dimensions: [],
                 metrics: reportConfig.metrics,
-                filters: reportConfig.filters.filter(f => f.value || ['is_null', 'is_not_null'].includes(f.operator))
+                filters: reportConfig.filters.filter(f => f.value || ['is_null', 'is_not_null'].includes(f.operator)),
+                page: currentPage,
+                per_page: pageSize
             });
 
             if (response.success) {
-                const data = response.data || [];
-                if (Array.isArray(data) && data.length > 0) {
-                    statusBadge.textContent = `${data.length} rows`;
-                    statusBadge.className = 'badge badge-success';
-                    statusBadge.style.display = 'inline-flex';
+                previewData = response.data || [];
 
-                    container.innerHTML = `
-                        <div class="preview-content">
-                            <pre>${JSON.stringify(data.slice(0, 10), null, 2)}</pre>
-                        </div>
-                    `;
-                    if (data.length > 10) {
-                        container.innerHTML += `
-                            <div style="padding: 0.75rem 1rem; background: #f8fafc; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--secondary);">
-                                Showing first 10 rows of ${data.length} total
-                            </div>
-                        `;
-                    }
+                // Handle new pagination response format
+                if (response.pagination) {
+                    totalRecords = response.pagination.total || previewData.length;
+                    totalPages = response.pagination.total_pages || Math.ceil(totalRecords / pageSize) || 1;
+                    currentPage = response.pagination.current_page || 1;
                 } else {
-                    statusBadge.textContent = 'No data';
-                    statusBadge.className = 'badge badge-warning';
-                    statusBadge.style.display = 'inline-flex';
-                    container.innerHTML = '<div class="preview-warning">No data found for this configuration</div>';
+                    // Fallback for old response format
+                    totalRecords = response.total || previewData.length;
+                    totalPages = Math.ceil(totalRecords / pageSize) || 1;
                 }
+
+                // Render appropriate view
+                if (currentView === 'table') {
+                    renderPreviewTable();
+                } else {
+                    renderChart(currentView);
+                }
+
+                showPagination();
+                showStats(response);
             } else {
-                statusBadge.textContent = 'Error';
-                statusBadge.className = 'badge badge-error';
-                statusBadge.style.display = 'inline-flex';
-                container.innerHTML = `<div class="preview-error">Error: ${response.message || 'Unknown error'}</div>`;
+                const errorHtml = `
+                    <div class="preview-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+                        <h4>Error</h4>
+                        <p>${response.message || 'Failed to load data'}</p>
+                    </div>
+                `;
+                if (currentView === 'table') {
+                    tableView.innerHTML = errorHtml;
+                } else {
+                    document.getElementById('previewChart').innerHTML = errorHtml;
+                }
             }
         } catch (error) {
-            console.error('Error previewing:', error);
-            document.getElementById('previewStatus').textContent = 'Error';
-            document.getElementById('previewStatus').className = 'badge badge-error';
-            document.getElementById('previewStatus').style.display = 'inline-flex';
-            document.getElementById('previewContainer').innerHTML = `<div class="preview-error">Error previewing report: ${error.message || 'Unknown error'}</div>`;
+            const errorHtml = `
+                <div class="preview-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+                    <h4>Error</h4>
+                    <p>${error.message || 'Failed to load data'}</p>
+                </div>
+            `;
+            if (currentView === 'table') {
+                tableView.innerHTML = errorHtml;
+            } else {
+                document.getElementById('previewChart').innerHTML = errorHtml;
+            }
         }
     }
 
-    // Open save template modal
-    function saveTemplate() {
-        if (!reportConfig.model) {
-            showNotification('Please select a data source', 'warning');
+    function renderPreviewTable() {
+        const tableView = document.getElementById('tableView');
+
+        if (!previewData || previewData.length === 0) {
+            tableView.innerHTML = `
+                <div class="preview-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>
+                    <h4>No Data Found</h4>
+                    <p>No records match your criteria. Try adjusting your filters.</p>
+                </div>
+            `;
             return;
         }
 
+        const columns = Object.keys(previewData[0]);
+
+        let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr>';
+
+        columns.forEach(col => {
+            const label = col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            html += `<th>${label}</th>`;
+        });
+
+        html += '</tr></thead><tbody>';
+
+        previewData.forEach(row => {
+            html += '<tr>';
+            columns.forEach(col => {
+                const val = row[col];
+                const isNumber = typeof val === 'number' || (!isNaN(parseFloat(val)) && col.includes('_'));
+                const displayVal = val === null || val === undefined ? '-' : (isNumber ? Number(val).toLocaleString() : val);
+                html += `<td class="${isNumber ? 'number' : ''}">${displayVal}</td>`;
+            });
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        tableView.innerHTML = html;
+    }
+
+    function showStats(response) {
+        const statsRow = document.getElementById('statsRow');
+        statsRow.style.display = 'flex';
+
+        let html = `
+            <div class="stat-item">
+                <span class="stat-value">${totalRecords.toLocaleString()}</span>
+                <span>total records</span>
+            </div>
+        `;
+
+        if (response.execution_time_ms) {
+            html += `
+                <div class="stat-item">
+                    <span class="stat-value">${response.execution_time_ms}ms</span>
+                    <span>query time</span>
+                </div>
+            `;
+        }
+
+        statsRow.innerHTML = html;
+
+        // Render summary cards
+        renderSummaryCards();
+    }
+
+    function showPagination() {
+        document.getElementById('previewActions').style.display = 'flex';
+        document.getElementById('paginationBar').style.display = 'flex';
+
+        const from = (currentPage - 1) * pageSize + 1;
+        const to = Math.min(currentPage * pageSize, totalRecords);
+
+        document.getElementById('showingFrom').textContent = totalRecords > 0 ? from : 0;
+        document.getElementById('showingTo').textContent = to;
+        document.getElementById('totalRecords').textContent = totalRecords;
+        document.getElementById('currentPageInput').value = currentPage;
+        document.getElementById('currentPageInput').max = totalPages;
+        document.getElementById('totalPages').textContent = totalPages;
+
+        document.getElementById('firstPageBtn').disabled = currentPage <= 1;
+        document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+        document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+        document.getElementById('lastPageBtn').disabled = currentPage >= totalPages;
+    }
+
+    function hidePreview() {
+        document.getElementById('previewActions').style.display = 'none';
+        document.getElementById('statsRow').style.display = 'none';
+        document.getElementById('paginationBar').style.display = 'none';
+        document.getElementById('summaryCards').style.display = 'none';
+
+        // Reset view to table
+        currentView = 'table';
+        document.querySelectorAll('.view-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.view === 'table');
+        });
+
+        document.getElementById('tableView').style.display = 'block';
+        document.getElementById('chartView').style.display = 'none';
+        document.getElementById('tableView').innerHTML = `
+            <div class="preview-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                <h4>Configure Your Report</h4>
+                <p>Select a table and add fields to see a preview of your data</p>
+            </div>
+        `;
+
+        // Destroy chart if exists
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+    }
+
+    function goToPage(page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        fetchPreviewData();
+    }
+
+    function changePageSize() {
+        pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+        currentPage = 1;
+        fetchPreviewData();
+    }
+
+    // Save Modal
+    function openSaveModal() {
         if (reportConfig.metrics.length === 0) {
-            showNotification('Please add at least one metric', 'warning');
+            alert('Please add at least one metric field');
             return;
         }
-
         document.getElementById('saveModal').classList.add('active');
         document.getElementById('templateName').focus();
     }
 
-    // Close modal
     function closeSaveModal() {
         document.getElementById('saveModal').classList.remove('active');
     }
 
-    // Confirm save
-    async function confirmSave() {
+    async function saveTemplate() {
         const name = document.getElementById('templateName').value.trim();
-        const description = document.getElementById('templateDesc').value.trim();
         const category = document.getElementById('templateCategory').value;
-        const icon = document.getElementById('templateIcon').value.trim() || '📊';
 
-        // Validation
         if (!name) {
-            showNotification('Please enter a template name', 'warning');
-            document.getElementById('templateName').focus();
-            return;
-        }
-
-        if (name.length < 3) {
-            showNotification('Template name must be at least 3 characters', 'warning');
-            document.getElementById('templateName').focus();
+            alert('Please enter a template name');
             return;
         }
 
         if (!category) {
-            showNotification('Please select a category', 'warning');
-            document.getElementById('templateCategory').focus();
+            alert('Please select a category');
             return;
         }
 
-        // Find the save button
         const saveBtn = document.querySelector('#saveModal .btn-primary');
-        const originalContent = saveBtn.innerHTML;
         saveBtn.disabled = true;
-        saveBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-            Saving...
-        `;
+        saveBtn.innerHTML = '<span class="loading-spinner" style="width:16px;height:16px;border-width:2px;margin-right:0.5rem;"></span> Saving...';
 
         try {
             const response = await window.apiClient.post('/api/visual-reports/builder/save-template', {
-                name: name,
-                description: description,
-                category: category,
-                icon: icon,
+                name,
+                description: document.getElementById('templateDesc').value.trim(),
+                category,
+                icon: document.getElementById('templateIcon').value.trim() || '📊',
                 model: reportConfig.model,
                 relationships: reportConfig.relationships,
-                row_dimensions: reportConfig.row_dimensions,
-                column_dimensions: reportConfig.column_dimensions,
+                row_dimensions: reportConfig.dimensions,
+                column_dimensions: [],
                 metrics: reportConfig.metrics,
-                filters: reportConfig.filters.filter(f => f.value || ['is_null', 'is_not_null'].includes(f.operator)),
-                default_view: { type: 'table' }
+                filters: reportConfig.filters,
+                default_view: { type: currentView }
             });
 
             if (response.success) {
                 closeSaveModal();
-                showNotification(`Template "${name}" created successfully!`, 'success');
-                setTimeout(() => {
-                    window.location.href = '{{ route("visual-reports.dashboard") }}';
-                }, 1000);
+                alert('Template saved successfully!');
+                window.location.href = '{{ route("visual-reports.dashboard") }}';
             } else {
+                alert('Error: ' + (response.message || 'Failed to save template'));
                 saveBtn.disabled = false;
-                saveBtn.innerHTML = originalContent;
-                // Handle validation errors
-                if (response.errors) {
-                    const errorMessages = Object.values(response.errors).flat().join(', ');
-                    showNotification('Validation error: ' + errorMessages, 'error');
-                } else {
-                    showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
-                }
+                saveBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Save Template';
             }
         } catch (error) {
-            console.error('Error saving template:', error);
+            alert('Error: ' + error.message);
             saveBtn.disabled = false;
-            saveBtn.innerHTML = originalContent;
-            showNotification('Error saving template: ' + (error.message || 'Unknown error'), 'error');
+            saveBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Save Template';
         }
     }
 
-    // Close modal when clicking outside
-    document.getElementById('saveModal').addEventListener('click', (e) => {
-        if (e.target.id === 'saveModal') {
-            closeSaveModal();
-        }
-    });
-
-    // Handle Escape key to close modal
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && document.getElementById('saveModal').classList.contains('active')) {
-            closeSaveModal();
-        }
-    });
-
-    // Clear form when opening modal
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.attributeName === 'class') {
-                const modal = document.getElementById('saveModal');
-                if (modal.classList.contains('active')) {
-                    document.getElementById('templateName').value = '';
-                    document.getElementById('templateDesc').value = '';
-                    document.getElementById('templateCategory').value = '';
-                    document.getElementById('templateIcon').value = '';
-                }
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal-backdrop').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
             }
         });
     });
 
-    observer.observe(document.getElementById('saveModal'), { attributes: true });
+    // ESC to close modals
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-backdrop.active').forEach(m => m.classList.remove('active'));
+        }
+    });
+
+    // View switching
+    function switchView(view) {
+        currentView = view;
+
+        // Update tab active state
+        document.querySelectorAll('.view-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.view === view);
+        });
+
+        // Show/hide views
+        const tableView = document.getElementById('tableView');
+        const chartView = document.getElementById('chartView');
+        const paginationBar = document.getElementById('paginationBar');
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+
+        if (view === 'table') {
+            tableView.style.display = 'block';
+            chartView.style.display = 'none';
+            paginationBar.style.display = 'flex';
+            pageSizeSelect.style.display = 'block';
+            renderPreviewTable();
+        } else {
+            tableView.style.display = 'none';
+            chartView.style.display = 'block';
+            paginationBar.style.display = 'none';
+            pageSizeSelect.style.display = 'none';
+            renderChart(view);
+        }
+    }
+
+    // Chart rendering with ApexCharts
+    function renderChart(type) {
+        // Destroy existing chart
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        if (!previewData || previewData.length === 0) {
+            document.getElementById('previewChart').innerHTML = `
+                <div class="preview-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>
+                    <h4>No Data Available</h4>
+                    <p>Run a preview to see chart visualization</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Get dimension and metric columns
+        const columns = Object.keys(previewData[0]);
+        const dimensionCols = reportConfig.dimensions.map(d => d.column.split('.').pop());
+        const metricCols = reportConfig.metrics.map(m => m.alias || `${m.column.replace('.', '_')}_${m.aggregate}`);
+
+        // Find available dimension and metric columns in data
+        const labelCol = columns.find(c => dimensionCols.includes(c)) || columns[0];
+        const valueCols = columns.filter(c => metricCols.some(m => c.includes(m.replace('.', '_'))) || (!dimensionCols.includes(c) && c !== labelCol));
+
+        // Extract labels and series data
+        const labels = previewData.map(row => String(row[labelCol] || 'Unknown'));
+        const series = [];
+
+        if (type === 'pie' || type === 'donut') {
+            // For pie/donut, use first metric column values
+            const valueCol = valueCols[0] || columns.find(c => c !== labelCol);
+            const values = previewData.map(row => parseFloat(row[valueCol]) || 0);
+
+            const options = {
+                chart: {
+                    type: type === 'donut' ? 'donut' : 'pie',
+                    height: 350,
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: { show: true }
+                },
+                series: values,
+                labels: labels,
+                colors: chartColors,
+                legend: {
+                    position: 'bottom',
+                    fontSize: '12px'
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: (val) => val.toFixed(1) + '%'
+                },
+                tooltip: {
+                    y: {
+                        formatter: (val) => Number(val).toLocaleString()
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: type === 'donut' ? '55%' : '0%',
+                            labels: {
+                                show: type === 'donut',
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    formatter: (w) => {
+                                        const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                        return Number(total).toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            chartInstance = new ApexCharts(document.getElementById('previewChart'), options);
+            chartInstance.render();
+        } else {
+            // For bar, line, area charts
+            valueCols.forEach((col, index) => {
+                const label = col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                series.push({
+                    name: label,
+                    data: previewData.map(row => parseFloat(row[col]) || 0)
+                });
+            });
+
+            // If no value columns found, try to use all numeric columns
+            if (series.length === 0) {
+                columns.filter(c => c !== labelCol).forEach((col, index) => {
+                    const firstVal = previewData[0][col];
+                    if (typeof firstVal === 'number' || !isNaN(parseFloat(firstVal))) {
+                        series.push({
+                            name: col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                            data: previewData.map(row => parseFloat(row[col]) || 0)
+                        });
+                    }
+                });
+            }
+
+            const options = {
+                chart: {
+                    type: getApexChartType(type),
+                    height: 350,
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: true,
+                            zoom: true,
+                            zoomin: true,
+                            zoomout: true,
+                            pan: true,
+                            reset: true
+                        }
+                    },
+                    animations: {
+                        enabled: true,
+                        speed: 500
+                    }
+                },
+                series: series,
+                colors: chartColors,
+                xaxis: {
+                    categories: labels,
+                    labels: {
+                        rotate: -45,
+                        rotateAlways: labels.length > 10,
+                        style: { fontSize: '11px' },
+                        trim: true,
+                        maxHeight: 80
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: (val) => {
+                            if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                            if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+                            return val.toFixed(0);
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: type === 'bar' && previewData.length <= 15
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'left'
+                },
+                tooltip: {
+                    shared: true,
+                    intersect: false,
+                    y: {
+                        formatter: (val) => Number(val).toLocaleString()
+                    }
+                },
+                grid: {
+                    borderColor: '#e2e8f0',
+                    strokeDashArray: 4
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: type === 'line' ? 3 : type === 'area' ? 2 : 0
+                },
+                fill: {
+                    type: type === 'area' ? 'gradient' : 'solid',
+                    gradient: {
+                        opacityFrom: 0.5,
+                        opacityTo: 0.1
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 4,
+                        columnWidth: '60%',
+                        distributed: series.length === 1 && previewData.length <= 10
+                    }
+                }
+            };
+
+            chartInstance = new ApexCharts(document.getElementById('previewChart'), options);
+            chartInstance.render();
+        }
+    }
+
+    function getApexChartType(type) {
+        const typeMap = {
+            'bar': 'bar',
+            'line': 'line',
+            'area': 'area',
+            'pie': 'pie',
+            'donut': 'donut'
+        };
+        return typeMap[type] || 'bar';
+    }
+
+    // Summary cards
+    function renderSummaryCards() {
+        const container = document.getElementById('summaryCards');
+
+        if (!previewData || previewData.length === 0 || reportConfig.metrics.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'flex';
+
+        const columns = Object.keys(previewData[0]);
+        const metricCols = reportConfig.metrics.map(m => m.alias || `${m.column.replace('.', '_')}_${m.aggregate}`);
+
+        let html = '';
+
+        // Calculate totals for each metric
+        metricCols.forEach(metricAlias => {
+            const col = columns.find(c => c.includes(metricAlias.replace('.', '_')));
+            if (col) {
+                const total = previewData.reduce((sum, row) => sum + (parseFloat(row[col]) || 0), 0);
+                const metric = reportConfig.metrics.find(m => (m.alias || `${m.column.replace('.', '_')}_${m.aggregate}`) === metricAlias);
+                const label = metric ? metric.label : col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                html += `
+                    <div class="summary-card">
+                        <div class="card-label">${label}</div>
+                        <div class="card-value">${formatNumber(total)}</div>
+                    </div>
+                `;
+            }
+        });
+
+        // Also show record count
+        html += `
+            <div class="summary-card">
+                <div class="card-label">Records</div>
+                <div class="card-value">${totalRecords.toLocaleString()}</div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function formatNumber(num) {
+        if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
+        if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+        return Number(num).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
 </script>
 @endsection

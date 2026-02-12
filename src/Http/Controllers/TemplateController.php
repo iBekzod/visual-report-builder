@@ -114,7 +114,7 @@ class TemplateController extends Controller
     }
 
     /**
-     * Execute template with filters
+     * Execute template with filters (supports pagination)
      */
     public function execute(Request $request, ReportTemplate $template)
     {
@@ -131,13 +131,17 @@ class TemplateController extends Controller
             $viewType = $request->input('view_type', $template->default_view['type'] ?? 'table');
             $chartConfig = $request->input('chart_config', $template->chart_config ?? []);
 
-            // Execute template
-            $result = $this->executor->execute($template, $appliedFilters);
+            // Pagination parameters
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 20);
+
+            // Execute template with pagination
+            $result = $this->executor->execute($template, $appliedFilters, $page, $perPage);
 
             // Format data for frontend
             $formattedData = $this->formatDataForView($result['data'], $viewType, $template);
 
-            return response()->json([
+            $response = [
                 'success' => true,
                 'data' => $formattedData,
                 'metadata' => [
@@ -147,7 +151,14 @@ class TemplateController extends Controller
                     'execution_time_ms' => $result['execution_time_ms'],
                     'record_count' => $result['record_count'],
                 ],
-            ]);
+            ];
+
+            // Add pagination info if available
+            if (isset($result['pagination'])) {
+                $response['pagination'] = $result['pagination'];
+            }
+
+            return response()->json($response);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

@@ -59,13 +59,15 @@ class TemplateExecutor
     }
 
     /**
-     * Execute a template with given filters
+     * Execute a template with given filters (supports pagination)
      *
      * @param ReportTemplate $template
      * @param array $appliedFilters
+     * @param int|null $page Page number (null for all data)
+     * @param int $perPage Items per page
      * @return array
      */
-    public function execute(ReportTemplate $template, array $appliedFilters = []): array
+    public function execute(ReportTemplate $template, array $appliedFilters = [], ?int $page = null, int $perPage = 20): array
     {
         $startTime = microtime(true);
 
@@ -85,20 +87,32 @@ class TemplateExecutor
         $dimensions = $template->getDimensions();
         $metrics = $template->getMetrics();
 
-        // Build result
-        $data = $this->queryData($query, $dimensions, $metrics);
+        // Build result with optional pagination
+        $result = $this->queryDataWithPagination($query, $dimensions, $metrics, $page, $perPage);
 
         // Calculate execution time
         $executionTime = round((microtime(true) - $startTime) * 1000);
 
-        return [
+        $response = [
             'success' => true,
-            'data' => $data,
+            'data' => $result['data'],
             'dimensions' => $dimensions,
             'metrics' => $metrics,
             'execution_time_ms' => $executionTime,
-            'record_count' => is_array($data) ? count($data) : ($data instanceof Collection ? $data->count() : 0),
+            'record_count' => $result['total'],
         ];
+
+        // Add pagination info if pagination was requested
+        if ($page !== null) {
+            $response['pagination'] = [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $result['total'],
+                'total_pages' => (int) ceil($result['total'] / $perPage),
+            ];
+        }
+
+        return $response;
     }
 
     /**
@@ -163,14 +177,16 @@ class TemplateExecutor
     }
 
     /**
-     * Query data from database with dimensions and metrics
+     * Query data from database with dimensions and metrics (with pagination support)
      *
      * @param Builder $query
      * @param array $dimensions
      * @param array $metrics
-     * @return Collection|array
+     * @param int|null $page Page number (null for all data)
+     * @param int $perPage Items per page
+     * @return array
      */
-    protected function queryData(Builder $query, array $dimensions, array $metrics): Collection|array
+    protected function queryDataWithPagination(Builder $query, array $dimensions, array $metrics, ?int $page = null, int $perPage = 20): array
     {
         $q = $this->getQuoteChar($query);
 
@@ -200,7 +216,46 @@ class TemplateExecutor
             $query->groupBy($groupByColumns);
         }
 
-        return $query->get()->toArray();
+        // If no pagination, return all data
+        if ($page === null) {
+            $data = $query->get()->toArray();
+            return [
+                'data' => $data,
+                'total' => count($data),
+            ];
+        }
+
+        // Clone query for counting (before adding limit/offset)
+        $countQuery = clone $query;
+
+        // Get total count
+        // For grouped queries, we need to count the number of groups
+        $total = \DB::table(\DB::raw("({$countQuery->toSql()}) as sub"))
+            ->mergeBindings($countQuery->getQuery())
+            ->count();
+
+        // Apply pagination
+        $offset = ($page - 1) * $perPage;
+        $data = $query->skip($offset)->take($perPage)->get()->toArray();
+
+        return [
+            'data' => $data,
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * Query data from database with dimensions and metrics (legacy method for backward compatibility)
+     *
+     * @param Builder $query
+     * @param array $dimensions
+     * @param array $metrics
+     * @return Collection|array
+     */
+    protected function queryData(Builder $query, array $dimensions, array $metrics): Collection|array
+    {
+        $result = $this->queryDataWithPagination($query, $dimensions, $metrics, null, 0);
+        return $result['data'];
     }
 
     /**

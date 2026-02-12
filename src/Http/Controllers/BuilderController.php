@@ -85,9 +85,59 @@ class BuilderController extends Controller
     }
 
     /**
-     * Preview report configuration
+     * Preview report configuration (paginated)
      */
     public function preview(Request $request)
+    {
+        try {
+            $config = $request->validate([
+                'model' => 'required|string',
+                'relationships' => 'array',
+                'row_dimensions' => 'array',
+                'column_dimensions' => 'array',
+                'metrics' => 'array',
+                'filters' => 'array',
+                'page' => 'integer|min:1',
+                'per_page' => 'integer|min:1|max:100',
+            ]);
+
+            // Validate model exists
+            if (!$this->dataSourceManager->isValidModel($config['model'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid model specified',
+                ], 422);
+            }
+
+            // Get pagination params
+            $page = $config['page'] ?? 1;
+            $perPage = $config['per_page'] ?? 20;
+
+            // Build and execute the query with pagination
+            $result = $this->executePreviewQuery($config, $page, $perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $result['data'],
+                'pagination' => [
+                    'current_page' => $result['current_page'],
+                    'per_page' => $result['per_page'],
+                    'total' => $result['total'],
+                    'total_pages' => $result['total_pages'],
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Export all data without pagination
+     */
+    public function export(Request $request)
     {
         try {
             $config = $request->validate([
@@ -107,12 +157,13 @@ class BuilderController extends Controller
                 ], 422);
             }
 
-            // Build and execute the query
-            $result = $this->executePreviewQuery($config);
+            // Execute query without pagination (all data)
+            $result = $this->executeExportQuery($config);
 
             return response()->json([
                 'success' => true,
                 'data' => $result,
+                'total' => count($result),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -123,9 +174,9 @@ class BuilderController extends Controller
     }
 
     /**
-     * Execute preview query with relationships and filters
+     * Execute preview query with relationships and filters (paginated)
      */
-    protected function executePreviewQuery(array $config): array
+    protected function executePreviewQuery(array $config, int $page = 1, int $perPage = 20): array
     {
         $modelClass = $config['model'];
         $relationships = $config['relationships'] ?? [];
@@ -201,9 +252,97 @@ class BuilderController extends Controller
             $query->groupBy($groupByColumns);
         }
 
-        // Limit results for preview
-        $query->limit(100);
+        // Get total count before pagination
+        $total = $query->count();
 
+        // Apply pagination
+        $offset = ($page - 1) * $perPage;
+        $data = $query->skip($offset)->take($perPage)->get()->toArray();
+
+        return [
+            'data' => $data,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => (int) ceil($total / $perPage),
+        ];
+    }
+
+    /**
+     * Execute export query without pagination (all data)
+     */
+    protected function executeExportQuery(array $config): array
+    {
+        $modelClass = $config['model'];
+        $relationships = $config['relationships'] ?? [];
+        $rowDimensions = $config['row_dimensions'] ?? [];
+        $columnDimensions = $config['column_dimensions'] ?? [];
+        $metrics = $config['metrics'] ?? [];
+        $filters = $config['filters'] ?? [];
+
+        // Create query builder instance
+        $query = $modelClass::query();
+
+        // Join relationships
+        foreach ($relationships as $relationName) {
+            $query->with($relationName);
+        }
+
+        // Build select columns
+        $selectColumns = [];
+        $groupByColumns = [];
+
+        // Add dimensions to select and group by
+        $allDimensions = array_merge($rowDimensions, $columnDimensions);
+        foreach ($allDimensions as $dimension) {
+            if (str_contains($dimension, '.')) {
+                continue;
+            }
+            $selectColumns[] = $dimension;
+            $groupByColumns[] = $dimension;
+        }
+
+        // Add metrics with aggregation
+        foreach ($metrics as $metric) {
+            $column = $metric['column'];
+            $aggregate = $metric['aggregate'] ?? 'sum';
+            $alias = $metric['alias'] ?? "{$column}_{$aggregate}";
+
+            if (str_contains($column, '.')) {
+                continue;
+            }
+
+            $selectColumns[] = \DB::raw("{$aggregate}({$column}) as {$alias}");
+        }
+
+        // Apply filters
+        foreach ($filters as $filter) {
+            $column = $filter['column'];
+            $operator = $filter['operator'] ?? '=';
+            $value = $filter['value'] ?? null;
+
+            if (str_contains($column, '.')) {
+                [$relation, $relColumn] = explode('.', $column, 2);
+                $query->whereHas($relation, function ($q) use ($relColumn, $operator, $value) {
+                    $this->applyFilterCondition($q, $relColumn, $operator, $value);
+                });
+                continue;
+            }
+
+            $this->applyFilterCondition($query, $column, $operator, $value);
+        }
+
+        // Apply select
+        if (!empty($selectColumns)) {
+            $query->select($selectColumns);
+        }
+
+        // Apply group by
+        if (!empty($groupByColumns)) {
+            $query->groupBy($groupByColumns);
+        }
+
+        // Return all data without limit
         return $query->get()->toArray();
     }
 
