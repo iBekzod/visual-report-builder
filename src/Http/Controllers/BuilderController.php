@@ -90,16 +90,25 @@ class BuilderController extends Controller
     public function preview(Request $request)
     {
         try {
-            $builder = app('visual-report-builder');
             $config = $request->validate([
                 'model' => 'required|string',
+                'relationships' => 'array',
                 'row_dimensions' => 'array',
                 'column_dimensions' => 'array',
                 'metrics' => 'array',
                 'filters' => 'array',
             ]);
 
-            $result = $builder->execute($config);
+            // Validate model exists
+            if (!$this->dataSourceManager->isValidModel($config['model'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid model specified',
+                ], 422);
+            }
+
+            // Build and execute the query
+            $result = $this->executePreviewQuery($config);
 
             return response()->json([
                 'success' => true,
@@ -110,6 +119,137 @@ class BuilderController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 400);
+        }
+    }
+
+    /**
+     * Execute preview query with relationships and filters
+     */
+    protected function executePreviewQuery(array $config): array
+    {
+        $modelClass = $config['model'];
+        $relationships = $config['relationships'] ?? [];
+        $rowDimensions = $config['row_dimensions'] ?? [];
+        $columnDimensions = $config['column_dimensions'] ?? [];
+        $metrics = $config['metrics'] ?? [];
+        $filters = $config['filters'] ?? [];
+
+        // Create query builder instance
+        $query = $modelClass::query();
+
+        // Join relationships
+        foreach ($relationships as $relationName) {
+            $query->with($relationName);
+        }
+
+        // Build select columns
+        $selectColumns = [];
+        $groupByColumns = [];
+
+        // Add dimensions to select and group by
+        $allDimensions = array_merge($rowDimensions, $columnDimensions);
+        foreach ($allDimensions as $dimension) {
+            if (str_contains($dimension, '.')) {
+                // Related table column - will be handled after eager loading
+                continue;
+            }
+            $selectColumns[] = $dimension;
+            $groupByColumns[] = $dimension;
+        }
+
+        // Add metrics with aggregation
+        foreach ($metrics as $metric) {
+            $column = $metric['column'];
+            $aggregate = $metric['aggregate'] ?? 'sum';
+            $alias = $metric['alias'] ?? "{$column}_{$aggregate}";
+
+            // Handle related columns
+            if (str_contains($column, '.')) {
+                // For related columns, we need to use subqueries or raw SQL
+                // For now, skip aggregation on related columns in preview
+                continue;
+            }
+
+            $selectColumns[] = \DB::raw("{$aggregate}({$column}) as {$alias}");
+        }
+
+        // Apply filters
+        foreach ($filters as $filter) {
+            $column = $filter['column'];
+            $operator = $filter['operator'] ?? '=';
+            $value = $filter['value'] ?? null;
+
+            // Handle related columns
+            if (str_contains($column, '.')) {
+                [$relation, $relColumn] = explode('.', $column, 2);
+                $query->whereHas($relation, function ($q) use ($relColumn, $operator, $value) {
+                    $this->applyFilterCondition($q, $relColumn, $operator, $value);
+                });
+                continue;
+            }
+
+            $this->applyFilterCondition($query, $column, $operator, $value);
+        }
+
+        // Apply select
+        if (!empty($selectColumns)) {
+            $query->select($selectColumns);
+        }
+
+        // Apply group by
+        if (!empty($groupByColumns)) {
+            $query->groupBy($groupByColumns);
+        }
+
+        // Limit results for preview
+        $query->limit(100);
+
+        return $query->get()->toArray();
+    }
+
+    /**
+     * Apply filter condition to query
+     */
+    protected function applyFilterCondition($query, string $column, string $operator, $value): void
+    {
+        switch ($operator) {
+            case '=':
+                $query->where($column, '=', $value);
+                break;
+            case '!=':
+                $query->where($column, '!=', $value);
+                break;
+            case '>':
+                $query->where($column, '>', $value);
+                break;
+            case '>=':
+                $query->where($column, '>=', $value);
+                break;
+            case '<':
+                $query->where($column, '<', $value);
+                break;
+            case '<=':
+                $query->where($column, '<=', $value);
+                break;
+            case 'like':
+                $query->where($column, 'like', "%{$value}%");
+                break;
+            case 'in':
+                $values = is_array($value) ? $value : explode(',', $value);
+                $query->whereIn($column, array_map('trim', $values));
+                break;
+            case 'not_in':
+                $values = is_array($value) ? $value : explode(',', $value);
+                $query->whereNotIn($column, array_map('trim', $values));
+                break;
+            case 'is_null':
+                $query->whereNull($column);
+                break;
+            case 'is_not_null':
+                $query->whereNotNull($column);
+                break;
+            default:
+                $query->where($column, '=', $value);
         }
     }
 
@@ -157,6 +297,7 @@ class BuilderController extends Controller
                 'model' => 'required|string',
                 'icon' => 'nullable|string|max:10',
                 'category' => 'required|string|max:100',
+                'relationships' => 'array',
                 'row_dimensions' => 'array',
                 'column_dimensions' => 'array',
                 'metrics' => 'required|array|min:1',
@@ -172,6 +313,13 @@ class BuilderController extends Controller
                 ], 422);
             }
 
+            // Build template configuration
+            $templateConfig = [
+                'relationships' => $validated['relationships'] ?? [],
+                'row_dimensions' => $validated['row_dimensions'] ?? [],
+                'column_dimensions' => $validated['column_dimensions'] ?? [],
+            ];
+
             // Create report template - set created_by to null if auth is disabled
             $template = ReportTemplate::create([
                 'created_by' => $userId, // Will be null if auth is disabled
@@ -182,12 +330,9 @@ class BuilderController extends Controller
                 'category' => $validated['category'],
                 'is_public' => true, // Per user requirement
                 'is_active' => true,
-                'dimensions' => array_merge(
-                    $validated['row_dimensions'] ?? [],
-                    $validated['column_dimensions'] ?? []
-                ),
+                'dimensions' => $templateConfig, // Store full config including relationships
                 'metrics' => $validated['metrics'],
-                'filters' => [], // Required JSON field - store filter definitions here
+                'filters' => $validated['filters'] ?? [], // Store filter definitions
                 'default_view' => $validated['default_view'] ?? ['type' => 'table'],
                 'chart_config' => [],
             ]);
